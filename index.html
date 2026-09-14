@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="reviewers.css" />
     <link rel="stylesheet" href="editorial.css" />
     <link rel="stylesheet" href="detail.css" />
+    <link rel="stylesheet" href="rounded.css" />
   </head>
   <body>
     <header class="site-header">
@@ -53,6 +54,7 @@
           <label class="search"><span>⌕</span><input id="review-search" type="search" placeholder="Buscar una tienda" /></label>
           <div id="review-filters" class="filters" aria-label="Filtrar estado de revisión"></div>
         </div>
+        <div class="gallery-toolbar"><div id="review-categories" class="filters" aria-label="Categorías generales"></div><div class="detail-modes" role="group" aria-label="Vista de las tarjetas"><button data-gallery-mode="desktop" aria-pressed="true">Escritorio</button><button data-gallery-mode="mobile" aria-pressed="false">Móvil</button></div></div><p id="gallery-note" hidden>Vista móvil integrada. Algunas tiendas impiden mostrar su web aquí.</p>
         <div id="review-list" class="review-list" aria-live="polite"></div>
       </section>
 
@@ -70,6 +72,8 @@
       <div class="detail-heading"><div><h2 id="detail-title"></h2><p id="detail-domain"></p></div><a id="detail-visit" class="detail-visit" target="_blank" rel="noopener">Visitar web ↗</a></div>
       <div class="detail-layout">
         <section class="detail-viewer" aria-label="Vistas de la web">
+          <label class="page-selector">Página <select id="detail-page"><option value="home">Home</option><option value="about">About</option><option value="catalog">Catálogo</option><option value="product">Detalle de producto</option></select></label>
+          <form id="page-link-form" hidden><label>Enlace de esta página<input id="page-link" type="url" placeholder="https://tienda.com/…" required /></label><button>Guardar enlace</button><p>Se guarda en este navegador.</p></form>
           <div class="detail-modes" role="group" aria-label="Formato de vista"><button type="button" data-detail-mode="desktop" aria-pressed="true">Escritorio</button><button type="button" data-detail-mode="mobile" aria-pressed="false">Móvil</button></div>
           <p id="detail-note" class="detail-note"></p><div id="detail-preview" class="detail-preview"></div>
         </section>

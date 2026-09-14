@@ -4,6 +4,10 @@ const knownProperties = {
   'www.lyleandscott.com': { industry: 'Moda', style: 'Animación · Vídeo de fondo · Tarjetas', typography: 'Sans serif', platform: 'Shopify', product: 'Producto físico', source: 'https://land-book.com/websites/98079-lyle-and-scottTM-official-site-premium-british-menswear' }
 };
 let detailStore;
+let detailMode = 'desktop';
+let detailPage = 'home';
+let pageLinks = JSON.parse(localStorage.getItem('vitrea-page-links') || '{}');
+function selectedPageUrl() { return detailPage === 'home' ? validWebsite(detailStore.url) : validWebsite((pageLinks[detailStore.url] || {})[detailPage]); }
 let detailOpener;
 let previousOverflow;
 function validWebsite(value) {
@@ -37,14 +41,22 @@ function openStoreDetail(store, opener) {
   document.body.style.overflow = 'hidden';
   detailDialog.showModal();
   detailDialog.scrollTop = 0;
+  detailPage = 'home';
+  detailDialog.querySelector('#detail-page').value = 'home';
   showDetailMode('desktop');
 }
 function showDetailMode(mode) {
+  detailMode = mode;
+  const pageUrl = selectedPageUrl();
+  detailDialog.querySelector('#page-link-form').hidden = detailPage === 'home';
+  detailDialog.querySelector('#page-link').value = pageUrl || '';
+  detailDialog.querySelector('#detail-visit').href = pageUrl || validWebsite(detailStore.url);
   const preview = detailDialog.querySelector('#detail-preview');
   const note = detailDialog.querySelector('#detail-note');
   detailDialog.querySelectorAll('[data-detail-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.detailMode === mode)));
   preview.replaceChildren();
   preview.className = `detail-preview ${mode}`;
+  if (!pageUrl) { note.textContent = 'Añade el enlace real de esta página para ver su versión de escritorio o móvil.'; return; }
   if (mode === 'desktop') {
     note.textContent = 'Captura de escritorio. Desplázate para explorar la página.';
     const status = document.createElement('p');
@@ -54,7 +66,7 @@ function showDetailMode(mode) {
     img.alt = `Captura de escritorio de ${detailStore.name}`;
     img.onload = () => status.remove();
     img.onerror = () => { img.remove(); status.textContent = 'No se ha podido cargar la captura. Puedes visitar la web con el enlace superior.'; };
-    img.src = detailStore.image || `https://image.thum.io/get/width/1200/crop/2800/noanimate/${validWebsite(detailStore.url)}`;
+    img.src = (detailPage === 'home' && detailStore.image) || `https://image.thum.io/get/width/1200/crop/2800/noanimate/${pageUrl}`;
     preview.append(status, img);
   } else {
     note.textContent = 'Vista web a 390 px de ancho. Algunas tiendas bloquean la vista integrada; si queda vacía, usa «Visitar web». No simula un dispositivo físico.';
@@ -62,7 +74,7 @@ function showDetailMode(mode) {
     frame.title = `Vista móvil de ${detailStore.name}`;
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     frame.referrerPolicy = 'no-referrer';
-    frame.src = validWebsite(detailStore.url);
+    frame.src = pageUrl;
     preview.append(frame);
   }
 }
@@ -85,3 +97,7 @@ detailDialog.addEventListener('close', () => {
   document.body.style.overflow = previousOverflow || '';
   if (detailOpener?.isConnected) detailOpener.focus({preventScroll:true});
 });
+
+detailDialog.querySelector('#detail-page').addEventListener('change', event => { detailPage = event.target.value; showDetailMode(detailMode); });
+detailDialog.querySelector('#page-link-form').addEventListener('submit', event => { event.preventDefault(); const input = detailDialog.querySelector('#page-link'); const url = validWebsite(input.value); if (!url) { input.setCustomValidity('Introduce un enlace http o https válido.'); input.reportValidity(); return; } input.setCustomValidity(''); pageLinks[detailStore.url] = {...pageLinks[detailStore.url], [detailPage]: url}; localStorage.setItem('vitrea-page-links', JSON.stringify(pageLinks)); showDetailMode(detailMode); });
+detailDialog.querySelector('#page-link').addEventListener('input', event => event.target.setCustomValidity(''));

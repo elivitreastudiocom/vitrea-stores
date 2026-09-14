@@ -1,4 +1,4 @@
-const supabaseClient = window.supabase.createClient(
+const supabaseClient = window.supabase?.createClient(
   'https://vgykdllkiymsxlcxutalq.supabase.co',
   'sb_publishable_SIBEtvHlapd7OmM1YgKM2g_syRWTteh'
 );
@@ -15,6 +15,20 @@ const reviewSearch = document.querySelector('#review-search');
 const reviewCount = document.querySelector('#review-count');
 const reviewStores = window.goodstores || [];
 let reviewFilter = 'Todas';
+let reviewCategory = 'Todas';
+let galleryMode = 'desktop';
+const generalCategories = ['Todas', 'Moda y accesorios', 'Hogar y diseño', 'Alimentación y bebidas', 'Belleza y bienestar', 'Otras / Sin clasificar'];
+const categoryGroups = {
+ 'Moda y accesorios': ['Skall','Marfa Stance','Laformela','Rise and Fall','Wedgwood','Partimento','Wwake','KHY','Ferm Living','Leo Lin','Cecilie Bahnsen','Chantelle','Dries Van Noten','Lyle & Scott','Officine Générale','Ysé Paris','Calibre','Gas Bijoux','Arpenteur','Mackintosh','Amina Muaddi'],
+ 'Hogar y diseño': ['Dimwit','Cocoon','Veark','In Common With','Roll & Hill','QuadroDesign','Snelling Studio','Simon James','Ferm Living','Wedgwood'],
+ 'Alimentación y bebidas': ['Manta Chocolate','Algae Cooking Club','Etota','Bero','WatchHouse','Orsa','Folk Coffee Club','Pomi Drinks','Maison La Durée','The Salad Project','Esther Rum','Field Trip','Stereoscopecoffee','Cãna'],
+ 'Belleza y bienestar': ['Susanne Kaufmann','Good Bacteria','Adaptual Health','Abel','Lesse']
+};
+function broadCategory(store) { return Object.keys(categoryGroups).reverse().find(key => categoryGroups[key].includes(store.name)) || 'Otras / Sin clasificar'; }
+function inclusionSwitch(store, person) {
+ const included = (reviewDecisions[store.url] || {})[person] === 'include';
+ return `<button type="button" class="inclusion-switch" role="switch" aria-checked="${included}" aria-label="${person === 'eli' ? 'Eli' : 'Diego'}: incluir ${escapeHtml(store.name)}" data-reviewer="${person}" data-review-status="include" data-review-url="${escapeHtml(store.url)}"><span>${person === 'eli' ? 'Eli' : 'Diego'}</span><span class="switch-track" aria-hidden="true"></span><span class="switch-caption">${included ? 'Incluida' : 'No incluida'}</span></button>`;
+}
 let reviewDecisions = JSON.parse(localStorage.getItem('vitrea-review-decisions') || '{}');
 
 function categories() { return ['Todas', ...new Set(stores.map(store => store.category).filter(Boolean))]; }
@@ -35,6 +49,7 @@ function render() {
 
 async function loadStores() {
   grid.innerHTML = '<p class="empty">Cargando tiendas…</p>';
+  if (!supabaseClient) { grid.innerHTML = '<p class="empty">No se han podido cargar las tiendas todavía.</p>'; return; }
   const { data, error } = await supabaseClient
     .from('stores')
     .select('name, url, category, description, image_url')
@@ -65,17 +80,24 @@ function renderReview() {
   const term = reviewSearch.value.trim().toLowerCase();
   const visible = reviewStores.filter(store => {
     const status = combinedStatus(store.url);
-    return (reviewFilter === 'Todas' || reviewFilter === reviewLabel(status)) && `${store.name} ${store.url}`.toLowerCase().includes(term);
+    return (reviewCategory === 'Todas' || broadCategory(store) === reviewCategory) && (reviewFilter === 'Todas' || (reviewFilter === 'Incluidas' ? status === 'include' : status !== 'include')) && `${store.name} ${store.url}`.toLowerCase().includes(term);
   });
   const pending = reviewStores.filter(store => combinedStatus(store.url) === 'pending').length;
   reviewCount.textContent = `${pending} por revisar · ${reviewStores.length} referencias`;
-  reviewFilters.innerHTML = ['Todas', 'Pendiente', 'Incluir', 'Descartar'].map(filter => `<button class="filter ${filter === reviewFilter ? 'active' : ''}" data-review-filter="${filter}">${filter}</button>`).join('');
+  reviewFilters.innerHTML = ['Todas', 'Incluidas', 'No incluidas'].map(filter => `<button class="filter ${filter === reviewFilter ? 'active' : ''}" data-review-filter="${filter}">${filter}</button>`).join('');
+  document.querySelector('#review-categories').innerHTML = generalCategories.map(category => `<button type="button" class="filter ${category === reviewCategory ? 'active' : ''}" data-general-category="${category}">${category}</button>`).join('');
+  reviewList.classList.toggle('mobile-gallery', galleryMode === 'mobile');
   reviewList.innerHTML = visible.length ? visible.map((store, index) => {
     const decisions = reviewDecisions[store.url] || {};
     const status = combinedStatus(store.url);
     const preview = `https://image.thum.io/get/width/1200/crop/2800/noanimate/${store.url}`;
-    return `<article class="review-card ${status}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver web ↗</span></a><div class="review-card-info"><div><p class="review-number">${String(index + 1).padStart(2, '0')} · GOODSTORES</p><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p></div><div class="reviewer-decision"><span>Eli</span><div><button class="review-action include ${decisions.eli === 'include' ? 'active' : ''}" data-reviewer="eli" data-review-status="include" data-review-url="${escapeHtml(store.url)}">Incluir</button><button class="review-action discard ${decisions.eli === 'discard' ? 'active' : ''}" data-reviewer="eli" data-review-status="discard" data-review-url="${escapeHtml(store.url)}">Descartar</button></div></div><div class="reviewer-decision"><span>Diego</span><div><button class="review-action include ${decisions.diego === 'include' ? 'active' : ''}" data-reviewer="diego" data-review-status="include" data-review-url="${escapeHtml(store.url)}">Incluir</button><button class="review-action discard ${decisions.diego === 'discard' ? 'active' : ''}" data-reviewer="diego" data-review-status="discard" data-review-url="${escapeHtml(store.url)}">Descartar</button></div></div></div></article>`;
+    return `<article class="review-card ${status}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver ficha ↗</span></a><div class="review-card-info"><div><p class="review-number">${String(index + 1).padStart(2, '0')} · GOODSTORES</p><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p></div><div class="inclusion-controls">${inclusionSwitch(store, 'eli')}${inclusionSwitch(store, 'diego')}</div></div></article>`;
   }).join('') : '<p class="review-empty">No hay referencias con este filtro.</p>';
+  if (galleryMode === 'mobile') {
+    reviewList.querySelectorAll('.review-preview').forEach(link => {
+      const frame = document.createElement('iframe'); frame.src = link.href; frame.title = link.getAttribute('aria-label'); frame.loading = 'lazy'; frame.setAttribute('sandbox', 'allow-scripts allow-same-origin'); frame.tabIndex = -1; link.querySelector('img').replaceWith(frame);
+    });
+  }
 }
 
 reviewFilters.addEventListener('click', event => {
@@ -102,3 +124,6 @@ search.addEventListener('input', render);
 document.querySelector('#year').textContent = new Date().getFullYear();
 loadStores();
 renderReview();
+
+document.querySelector('#review-categories').addEventListener('click', event => { const button = event.target.closest('[data-general-category]'); if (!button) return; reviewCategory = button.dataset.generalCategory; renderReview(); });
+document.querySelectorAll('[data-gallery-mode]').forEach(button => button.addEventListener('click', () => { galleryMode = button.dataset.galleryMode; document.querySelectorAll('[data-gallery-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button))); document.querySelector('#gallery-note').hidden = galleryMode !== 'mobile'; renderReview(); }));
