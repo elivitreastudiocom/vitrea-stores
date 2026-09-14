@@ -15,7 +15,7 @@ const reviewSearch = document.querySelector('#review-search');
 const reviewCount = document.querySelector('#review-count');
 const reviewStores = window.goodstores || [];
 let reviewFilter = 'Todas';
-let reviewStatus = JSON.parse(localStorage.getItem('vitrea-review-status') || '{}');
+let reviewDecisions = JSON.parse(localStorage.getItem('vitrea-review-decisions') || '{}');
 
 function categories() { return ['Todas', ...new Set(stores.map(store => store.category).filter(Boolean))]; }
 function escapeHtml(value = '') { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
@@ -54,19 +54,27 @@ function reviewLabel(status) {
   return { include: 'Incluir', discard: 'Descartar' }[status] || 'Pendiente';
 }
 
+function combinedStatus(storeUrl) {
+  const choices = Object.values(reviewDecisions[storeUrl] || {});
+  if (choices.includes('include')) return 'include';
+  if (choices.includes('discard')) return 'discard';
+  return 'pending';
+}
+
 function renderReview() {
   const term = reviewSearch.value.trim().toLowerCase();
   const visible = reviewStores.filter(store => {
-    const status = reviewStatus[store.url] || 'pending';
+    const status = combinedStatus(store.url);
     return (reviewFilter === 'Todas' || reviewFilter === reviewLabel(status)) && `${store.name} ${store.url}`.toLowerCase().includes(term);
   });
-  const pending = reviewStores.filter(store => !reviewStatus[store.url]).length;
+  const pending = reviewStores.filter(store => combinedStatus(store.url) === 'pending').length;
   reviewCount.textContent = `${pending} por revisar · ${reviewStores.length} referencias`;
   reviewFilters.innerHTML = ['Todas', 'Pendiente', 'Incluir', 'Descartar'].map(filter => `<button class="filter ${filter === reviewFilter ? 'active' : ''}" data-review-filter="${filter}">${filter}</button>`).join('');
   reviewList.innerHTML = visible.length ? visible.map((store, index) => {
-    const status = reviewStatus[store.url];
+    const decisions = reviewDecisions[store.url] || {};
+    const status = combinedStatus(store.url);
     const preview = `https://image.thum.io/get/width/1200/crop/2800/noanimate/${store.url}`;
-    return `<article class="review-card ${status || 'pending'}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver web ↗</span></a><div class="review-card-info"><div><p class="review-number">${String(index + 1).padStart(2, '0')} · GOODSTORES</p><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p></div><div class="review-actions" role="group" aria-label="Decisión para ${escapeHtml(store.name)}"><button class="review-action include ${status === 'include' ? 'active' : ''}" data-review-status="include" data-review-url="${escapeHtml(store.url)}">Incluir</button><button class="review-action discard ${status === 'discard' ? 'active' : ''}" data-review-status="discard" data-review-url="${escapeHtml(store.url)}">Descartar</button></div></div></article>`;
+    return `<article class="review-card ${status}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver web ↗</span></a><div class="review-card-info"><div><p class="review-number">${String(index + 1).padStart(2, '0')} · GOODSTORES</p><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p></div><div class="reviewer-decision"><span>Eli</span><div><button class="review-action include ${decisions.eli === 'include' ? 'active' : ''}" data-reviewer="eli" data-review-status="include" data-review-url="${escapeHtml(store.url)}">Incluir</button><button class="review-action discard ${decisions.eli === 'discard' ? 'active' : ''}" data-reviewer="eli" data-review-status="discard" data-review-url="${escapeHtml(store.url)}">Descartar</button></div></div><div class="reviewer-decision"><span>Diego</span><div><button class="review-action include ${decisions.diego === 'include' ? 'active' : ''}" data-reviewer="diego" data-review-status="include" data-review-url="${escapeHtml(store.url)}">Incluir</button><button class="review-action discard ${decisions.diego === 'discard' ? 'active' : ''}" data-reviewer="diego" data-review-status="discard" data-review-url="${escapeHtml(store.url)}">Descartar</button></div></div></div></article>`;
   }).join('') : '<p class="review-empty">No hay referencias con este filtro.</p>';
 }
 
@@ -80,10 +88,13 @@ reviewSearch.addEventListener('input', renderReview);
 reviewList.addEventListener('click', event => {
   const button = event.target.closest('[data-review-status]');
   if (!button) return;
-  const { reviewStatus: status, reviewUrl: url } = button.dataset;
-  reviewStatus[url] = reviewStatus[url] === status ? undefined : status;
-  if (!reviewStatus[url]) delete reviewStatus[url];
-  localStorage.setItem('vitrea-review-status', JSON.stringify(reviewStatus));
+  const { reviewer, reviewStatus: status, reviewUrl: url } = button.dataset;
+  const decisions = reviewDecisions[url] || {};
+  decisions[reviewer] = decisions[reviewer] === status ? undefined : status;
+  if (!decisions[reviewer]) delete decisions[reviewer];
+  reviewDecisions[url] = decisions;
+  if (!Object.keys(decisions).length) delete reviewDecisions[url];
+  localStorage.setItem('vitrea-review-decisions', JSON.stringify(reviewDecisions));
   renderReview();
 });
 filters.addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; render(); });
