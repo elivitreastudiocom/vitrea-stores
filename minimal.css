@@ -9,3 +9,5 @@
 .shot iframe{transform-origin:top left;max-width:none}.directory-mobile .shot iframe{max-width:none}
 
 #directory-mobile-note{font-size:12px;color:var(--muted)}
+
+.review-card-info>div>a.review-visit{display:inline-flex;font:400 12px/1.4 var(--mono);margin:0 0 14px;padding:5px 0;text-decoration:underline;text-underline-offset:4px}

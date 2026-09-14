@@ -83,6 +83,7 @@ for (const container of [grid, reviewList]) {
   container.addEventListener('click', event => {
     const link = event.target.closest('a');
     if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (link.hasAttribute('data-direct-visit')) return;
     // Keep the directory's explicit external arrow as a direct visit.
     if (link.closest('.card-info') && link.getAttribute('aria-hidden') === 'true') return;
     const store = [...stores, ...reviewStores].find(item => validWebsite(item.url) === link.href);
