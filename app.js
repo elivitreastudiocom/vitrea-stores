@@ -2,7 +2,12 @@ const supabaseClient = window.supabase?.createClient(
   'https://vgykdlkiymsxlcxutalq.supabase.co',
   'sb_publishable_SIBEtvHlapd7OmM1YgKM2g_syRWTteh'
 );
-let stores = [];
+let stores = [
+ {name:'Taya',url:'https://tayanecklace.com/',category:'E-commerce',industry:'Joyería'},
+ {name:'Tadaima',url:'https://tadaimacph.com/',category:'E-commerce',industry:'Diseño y hogar'},
+ {name:'Nossara',url:'https://nossara.com/',category:'E-commerce',industry:'Textil y hogar'}
+];
+let directoryMode = 'desktop';
 let selectedCategory = 'Todas';
 
 const grid = document.querySelector('#store-grid');
@@ -26,49 +31,32 @@ const categoryGroups = {
 };
 function broadCategory(store) { return Object.keys(categoryGroups).reverse().find(key => categoryGroups[key].includes(store.name)) || 'Otras / Sin clasificar'; }
 function inclusionSwitch(store, person) {
- const included = (reviewDecisions[store.url] || {})[person] === 'include';
+ const selected = (reviewDecisions[store.url] || {})[person] || 'pending';
  const connected = typeof sharedState !== 'undefined' && sharedState.ready;
  const editable = connected && !sharedState.busy.has(store.url + '|' + person);
- return `<button type="button" class="inclusion-switch" ${editable ? '' : 'disabled'} title="${!connected ? 'Conectando con las selecciones compartidas' : !editable ? 'Guardando selección' : 'Guardar selección compartida'}" role="switch" aria-checked="${included}" aria-label="${person === 'eli' ? 'Eli' : 'Diego'}: incluir ${escapeHtml(store.name)}" data-reviewer="${person}" data-review-status="include" data-review-url="${escapeHtml(store.url)}"><span>${person === 'eli' ? 'Eli' : 'Diego'}</span><span class="switch-track" aria-hidden="true"></span><span class="switch-caption">${!connected ? 'Sin conectar' : included ? 'Incluida' : 'No incluida'}</span></button>`;
+ const name = person === 'eli' ? 'Eli' : 'Diego';
+ return `<div class="review-choice"><span>${name}</span><div class="status-options" role="group" aria-label="${name}: ${escapeHtml(store.name)}">${[['pending','Por revisar'],['discard','No incluida'],['include','Incluida']].map(([value,label]) => `<button type="button" ${editable ? '' : 'disabled'} aria-pressed="${selected === value}" data-reviewer="${person}" data-review-status="${value}" data-review-url="${escapeHtml(store.url)}">${label}</button>`).join('')}</div></div>`;
 }
 let reviewDecisions = {};
 
-function categories() { return ['Todas', ...new Set(stores.map(store => store.category).filter(Boolean))]; }
+function categories() { return ['Todas', 'E-commerce', 'Agency', 'Portfolio', 'Sports', 'Exploration']; }
 function escapeHtml(value = '') { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
+const previewSizer = new ResizeObserver(entries => entries.forEach(({target}) => { const frame=target.querySelector('iframe'); if(!frame)return; const width=directoryMode==='mobile'?390:1440; const scale=target.clientWidth/width; frame.style.width=width+'px';frame.style.height=(target.clientHeight/scale)+'px';frame.style.transform=`scale(${scale})`; }));
 function render() {
+  previewSizer.disconnect();
+  document.querySelector('#directory-mobile-note').hidden=directoryMode!=='mobile';
   const term = search.value.trim().toLowerCase();
   const visible = stores.filter(store => (selectedCategory === 'Todas' || store.category === selectedCategory) && `${store.name} ${store.country} ${store.category} ${store.description}`.toLowerCase().includes(term));
-  count.textContent = `${stores.length} ${stores.length === 1 ? 'tienda' : 'tiendas'}`;
+  count.textContent = `${visible.length} webs`;
   filters.innerHTML = categories().map(category => `<button class="filter ${category === selectedCategory ? 'active' : ''}" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join('');
-  grid.innerHTML = visible.length ? visible.map((store, index) => `
-    <article class="store-card">
-      <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Visitar ${escapeHtml(store.name)}">
-        <div class="shot">${store.image ? `<img src="${store.image}" alt="Captura de ${escapeHtml(store.name)}" />` : `<div class="fallback" style="--card-a:${['#d9e9c9','#efc5b9','#c9dce1','#ded2bd'][index % 4]};--card-b:${['#a7b8a0','#dfa49e','#aabdc3','#baa47e'][index % 4]}">${escapeHtml(store.name)}</div>`}</div>
-      </a>
-      <div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${escapeHtml([store.category, store.country, store.description].filter(Boolean).join(' · '))}</p></div><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-hidden="true">↗</a></div>
-    </article>`).join('') : `<p class="empty">Aún no hay tiendas aquí. Añade la primera desde el botón superior.</p>`;
+  grid.classList.toggle('directory-mobile', directoryMode === 'mobile');
+  grid.innerHTML = visible.length ? visible.map(store => `<article class="store-card"><a href="${escapeHtml(store.url)}" aria-label="Ver ${escapeHtml(store.name)}"><div class="shot">${directoryMode === 'mobile' ? `<iframe src="${escapeHtml(store.url)}" title="Vista móvil de ${escapeHtml(store.name)}" loading="eager" sandbox="allow-scripts allow-same-origin" tabindex="-1"></iframe>` : `<img src="https://image.thum.io/get/width/600/crop/900/noanimate/${escapeHtml(store.url)}" alt="${escapeHtml(store.name)}" loading="lazy" />`}</div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${escapeHtml(store.category)}</p></div><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-hidden="true">↗</a></div></article>`).join('') : '<p class="empty">No hay webs con este filtro.</p>';
+  grid.querySelectorAll('.shot').forEach(shot=>previewSizer.observe(shot));
 }
-
-async function loadStores() {
-  grid.innerHTML = '<p class="empty">Cargando tiendas…</p>';
-  if (!supabaseClient) { grid.innerHTML = '<p class="empty">No se han podido cargar las tiendas todavía.</p>'; return; }
-  const { data, error } = await supabaseClient
-    .from('stores')
-    .select('name, url, category, description, image_url')
-    .eq('published', true)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    grid.innerHTML = '<p class="empty">No se han podido cargar las tiendas todavía.</p>';
-    return;
-  }
-
-  stores = (data || []).map(store => ({ ...store, image: store.image_url }));
-  render();
-}
+function loadStores() { render(); }
 
 function reviewLabel(status) {
-  return { include: 'Incluir', discard: 'Descartar' }[status] || 'Pendiente';
+  return { include: 'Incluida', discard: 'No incluida' }[status] || 'Por revisar';
 }
 
 function combinedStatus(storeUrl) {
@@ -82,18 +70,18 @@ function renderReview() {
   const term = reviewSearch.value.trim().toLowerCase();
   const visible = reviewStores.filter(store => {
     const status = combinedStatus(store.url);
-    return (reviewCategory === 'Todas' || broadCategory(store) === reviewCategory) && (reviewFilter === 'Todas' || (reviewFilter === 'Incluidas' ? status === 'include' : status !== 'include')) && `${store.name} ${store.url}`.toLowerCase().includes(term);
+    return (reviewCategory === 'Todas' || broadCategory(store) === reviewCategory) && (reviewFilter === 'Todas' || status === ({'Incluidas':'include','No incluidas':'discard','Por revisar':'pending'}[reviewFilter])) && `${store.name} ${store.url}`.toLowerCase().includes(term);
   });
   const pending = reviewStores.filter(store => combinedStatus(store.url) === 'pending').length;
   reviewCount.textContent = `${pending} por revisar · ${reviewStores.length} referencias`;
-  reviewFilters.innerHTML = ['Todas', 'Incluidas', 'No incluidas'].map(filter => `<button class="filter ${filter === reviewFilter ? 'active' : ''}" data-review-filter="${filter}">${filter}</button>`).join('');
+  reviewFilters.innerHTML = ['Todas', 'Por revisar', 'No incluidas', 'Incluidas'].map(filter => `<button class="filter ${filter === reviewFilter ? 'active' : ''}" data-review-filter="${filter}">${filter}</button>`).join('');
   document.querySelector('#review-categories').innerHTML = generalCategories.map(category => `<button type="button" class="filter ${category === reviewCategory ? 'active' : ''}" data-general-category="${category}">${category}</button>`).join('');
   reviewList.classList.toggle('mobile-gallery', galleryMode === 'mobile');
   reviewList.innerHTML = visible.length ? visible.map((store, index) => {
     const decisions = reviewDecisions[store.url] || {};
     const status = combinedStatus(store.url);
-    const preview = `https://image.thum.io/get/width/1200/crop/2800/noanimate/${store.url}`;
-    return `<article class="review-card ${status}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver ficha ↗</span></a><div class="review-card-info"><div><p class="review-number">${String(index + 1).padStart(2, '0')} · GOODSTORES</p><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p></div><div class="inclusion-controls">${inclusionSwitch(store, 'eli')}${inclusionSwitch(store, 'diego')}</div></div></article>`;
+    const preview = `https://image.thum.io/get/width/600/crop/900/noanimate/${store.url}`;
+    return `<article class="review-card ${status}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver ficha ↗</span></a><div class="review-card-info"><div><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p></div><div class="inclusion-controls">${inclusionSwitch(store, 'eli')}${inclusionSwitch(store, 'diego')}</div></div></article>`;
   }).join('') : '<p class="review-empty">No hay referencias con este filtro.</p>';
   if (galleryMode === 'mobile') {
     reviewList.querySelectorAll('.review-preview').forEach(link => {
@@ -113,7 +101,7 @@ reviewList.addEventListener('click', event => {
   const button = event.target.closest('[data-review-status]');
   if (!button) return;
   const { reviewer, reviewUrl: url } = button.dataset;
-  sharedState.toggle(url, reviewer);
+  sharedState.toggle(url, reviewer, button.dataset.reviewStatus);
 });
 filters.addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; render(); });
 search.addEventListener('input', render);
@@ -123,3 +111,5 @@ renderReview();
 
 document.querySelector('#review-categories').addEventListener('click', event => { const button = event.target.closest('[data-general-category]'); if (!button) return; reviewCategory = button.dataset.generalCategory; renderReview(); });
 document.querySelectorAll('[data-gallery-mode]').forEach(button => button.addEventListener('click', () => { galleryMode = button.dataset.galleryMode; document.querySelectorAll('[data-gallery-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button))); document.querySelector('#gallery-note').hidden = galleryMode !== 'mobile'; renderReview(); }));
+
+document.querySelectorAll('[data-directory-mode]').forEach(button => button.addEventListener('click', () => {directoryMode=button.dataset.directoryMode;document.querySelectorAll('[data-directory-mode]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));render();}));

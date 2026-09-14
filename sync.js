@@ -11,16 +11,16 @@ const sharedState = (() => {
   function status(text,error=false) {message.textContent=text;message.classList.toggle('sync-error',error);}
   function redraw() {
     const focused = document.activeElement?.dataset;
-    const restore = focused?.reviewUrl ? {url:focused.reviewUrl,reviewer:focused.reviewer} : null;
+    const restore = focused?.reviewUrl ? {url:focused.reviewUrl,reviewer:focused.reviewer,selection:focused.reviewStatus} : null;
     renderReview();
-    if (restore) [...reviewList.querySelectorAll('[data-review-url]')].find(el=>el.dataset.reviewUrl===restore.url && el.dataset.reviewer===restore.reviewer)?.focus({preventScroll:true});
+    if (restore) [...reviewList.querySelectorAll('[data-review-url]')].find(el=>el.dataset.reviewUrl===restore.url && el.dataset.reviewer===restore.reviewer && el.dataset.reviewStatus===restore.selection)?.focus({preventScroll:true});
     if (typeof updateDetailReviewStatus==='function') updateDetailReviewStatus();
   }
   function applyReview(row) {
     const key=row.store_url+'|'+row.reviewer;
     if ((reviewVersions.get(key)||0)>=row.revision) return false;
     reviewVersions.set(key,row.revision);
-    reviewDecisions[row.store_url]={...reviewDecisions[row.store_url],[row.reviewer]:row.included?'include':'discard'};
+    reviewDecisions[row.store_url]={...reviewDecisions[row.store_url],[row.reviewer]:row.included===null?'pending':row.included?'include':'discard'};
     return true;
   }
   function applyPage(row) {
@@ -42,16 +42,16 @@ const sharedState = (() => {
     state.ready=true;
     if(changed) redraw();
   }
-  async function toggle(url,reviewer) {
-    if(!state.ready || !['eli','diego'].includes(reviewer)) return;
+  async function toggle(url,reviewer,selection) {
+    if(!state.ready || !['pending','discard','include'].includes(selection) || !['eli','diego'].includes(reviewer)) return;
     const key=url+'|'+reviewer;
     if(state.busy.has(key)) return;
-    const included=(reviewDecisions[url]||{})[reviewer]!=='include';
+    const included=selection==='pending'?null:selection==='include';
     state.busy.add(key);redraw();status('Guardando selección…');
     try {
       const {data,error}=await client.from('vitrea_reviews').upsert({store_url:url,reviewer,included},{onConflict:'store_url,reviewer'}).select('store_url,reviewer,included,revision').single();
       if(error) throw error;
-      applyReview(data);status('Guardado · visible para todos.');
+      applyReview(data);status('Guardado');
     } catch {status('No se ha confirmado el guardado. Comprueba la conexión y vuelve a intentarlo.',true);}
     finally {state.busy.delete(key);redraw();}
   }
@@ -80,12 +80,12 @@ const sharedState = (() => {
   });
   async function refresh() {
     if(document.hidden || state.refresh || !client) return;
-    state.refresh=snapshot().then(()=>{if(!state.busy.size)status('Selecciones compartidas actualizadas.');}).catch(()=>status('Sin conexión. Los datos visibles pueden estar desactualizados.',true)).finally(()=>{state.refresh=null;});
+    state.refresh=snapshot().then(()=>{if(!state.busy.size)status('Sincronizado');}).catch(()=>status('Sin conexión. Los datos visibles pueden estar desactualizados.',true)).finally(()=>{state.refresh=null;});
     await state.refresh;
   }
   async function connect() {
     if(!client){status('No se ha podido conectar. Recarga la página.',true);return;}
-    try {await snapshot();status('Selecciones compartidas · acceso abierto.');}
+    try {await snapshot();status('Sincronizado');}
     catch {status('No se han podido cargar las selecciones. Reintentando…',true);}
     client.channel('vitrea-public-workspace')
       .on('postgres_changes',{event:'*',schema:'public',table:'vitrea_reviews'},payload=>{
@@ -97,7 +97,7 @@ const sharedState = (() => {
         if(!editing && detailDialog.open && detailStore?.url===payload.new.store_url && detailPage===payload.new.page_type)showDetailMode(detailMode);
       }).subscribe(async channelStatus=>{
         if(channelStatus==='SUBSCRIBED'){
-          try {await snapshot();if(!state.busy.size)status('Conectado en directo · acceso abierto.');}
+          try {await snapshot();if(!state.busy.size)status('Sincronizado');}
           catch {status('No se han podido actualizar las selecciones.',true);}
         } else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channelStatus))status('Reconectando · los cambios se comprobarán automáticamente.',true);
       });

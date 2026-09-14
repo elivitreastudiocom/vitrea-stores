@@ -29,7 +29,7 @@ function openStoreDetail(store, opener) {
     ['Tipografía', details.typography], ['Plataforma', details.platform],
     ['Producto', details.product], ['Colección', isReview ? 'Goodstores · En revisión' : 'Directorio Vitrea']
   ];
-  detailDialog.querySelector('#detail-properties').innerHTML = rows.map(([label, value]) => `<div><dt>${label}</dt><dd class="${value ? '' : 'undocumented'}">${escapeHtml(value || 'Por documentar')}</dd></div>`).join('');
+  detailDialog.querySelector('#detail-properties').innerHTML = rows.filter(([,value])=>value).map(([label, value]) => `<div><dt>${label}</dt><dd class="${value ? '' : 'undocumented'}">${escapeHtml(value || 'Por documentar')}</dd></div>`).join('');
   const description = detailDialog.querySelector('#detail-description');
   description.textContent = store.description || '';
   description.hidden = !store.description;
@@ -59,7 +59,7 @@ function showDetailMode(mode) {
   preview.className = `detail-preview ${mode}`;
   if (!pageUrl) { note.textContent = 'Añade el enlace real de esta página para ver su versión de escritorio o móvil.'; return; }
   if (mode === 'desktop') {
-    note.textContent = 'Captura de escritorio. Desplázate para explorar la página.';
+    note.textContent = '';
     const status = document.createElement('p');
     status.className = 'preview-status';
     status.textContent = 'Cargando captura…';
@@ -67,10 +67,10 @@ function showDetailMode(mode) {
     img.alt = `Captura de escritorio de ${detailStore.name}`;
     img.onload = () => status.remove();
     img.onerror = () => { img.remove(); status.textContent = 'No se ha podido cargar la captura. Puedes visitar la web con el enlace superior.'; };
-    img.src = (detailPage === 'home' && detailStore.image) || `https://image.thum.io/get/width/1200/crop/2800/noanimate/${pageUrl}`;
+    img.src = (detailPage === 'home' && detailStore.image) || `https://image.thum.io/get/width/600/crop/900/noanimate/${pageUrl}`;
     preview.append(status, img);
   } else {
-    note.textContent = 'Vista web a 390 px de ancho. Algunas tiendas bloquean la vista integrada; si queda vacía, usa «Visitar web». No simula un dispositivo físico.';
+    note.textContent = 'Si la web bloquea la vista móvil, ábrela en «Visitar web».';
     const frame = document.createElement('iframe');
     frame.title = `Vista móvil de ${detailStore.name}`;
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
@@ -117,7 +117,8 @@ detailDialog.querySelector('#page-link-form').addEventListener('submit', async e
 });
 function updateDetailReviewStatus() {
   if (!detailDialog.open || !detailStore) return;
-  detailDialog.querySelector('#detail-review-status').textContent = !sharedState.ready ? 'Conectando con las selecciones del equipo…' : ['eli','diego'].map(person => `${person === 'eli' ? 'Eli' : 'Diego'}: ${(reviewDecisions[detailStore.url] || {})[person] === 'include' ? 'Incluida' : 'No incluida'}`).join(' · ');
+  if (!reviewStores.some(store=>store.url===detailStore.url)) {detailDialog.querySelector('#detail-review-status').textContent='';return;}
+  detailDialog.querySelector('#detail-review-status').textContent = !sharedState.ready ? 'Conectando con las selecciones del equipo…' : ['eli','diego'].map(person => `${person === 'eli' ? 'Eli' : 'Diego'}: ${reviewLabel((reviewDecisions[detailStore.url] || {})[person])}`).join(' · ');
 }
 
 detailDialog.querySelector('#page-link').addEventListener('input', event => event.target.setCustomValidity(''));

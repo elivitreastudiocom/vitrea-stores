@@ -4,55 +4,46 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Una selección visual de tiendas online." />
-    <title>Vitrea — Stores Directory</title>
+    <title>Vítrea Studio Gallery</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="development.css" />
     <link rel="stylesheet" href="reviewers.css" />
     <link rel="stylesheet" href="editorial.css" />
     <link rel="stylesheet" href="detail.css" />
     <link rel="stylesheet" href="rounded.css" />
+    <link rel="stylesheet" href="minimal.css" />
   </head>
   <body>
     <header class="site-header">
       <a class="logo" href="#top" aria-label="Vitrea, inicio">vitrea<span>.</span></a>
       <nav aria-label="Navegación principal">
         <a href="#stores">Directorio</a>
-        <a href="#development">Desarrollo <sup>temp</sup></a>
-        <a href="#about">El proyecto</a>
+        <a href="#development">Desarrollo</a>
       </nav>
-      <a class="add-button" href="#about">Proponer tienda <span>↗</span></a>
     </header>
 
     <main id="top">
-      <section class="hero">
-        <img class="hero-image" src="vitrea-hero.png" alt="" fetchpriority="high" />
-        <p class="eyebrow">DIRECTORIO DE E-COMMERCE · 2026</p>
-        <h1>Tiendas que dan<br /><em>ganas de mirar.</em></h1>
-        <p class="intro">Una biblioteca personal de e-commerces con personalidad, bien seleccionada y siempre creciendo.</p>
-        <a class="scroll-link" href="#stores">Explorar tiendas <span>↓</span></a>
-      </section>
+      <section class="hero"><h1>Vítrea Studio Gallery</h1></section>
 
       <section class="directory" id="stores">
         <div class="directory-head">
-          <div><p class="eyebrow">SELECCIÓN</p><h2>El directorio</h2></div>
+          <div><h2>Directorio</h2></div>
           <p id="store-count" class="count">0 tiendas</p>
         </div>
-        <div class="controls">
-          <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Buscar por nombre, país o categoría" /></label>
-          <div id="filters" class="filters" aria-label="Filtrar por categoría"></div>
-        </div>
+        <div class="directory-toolbar"><div id="filters" class="filters" aria-label="Tipos de web"></div><div class="detail-modes" role="group" aria-label="Vista del directorio"><button data-directory-mode="desktop" aria-pressed="true">Escritorio</button><button data-directory-mode="mobile" aria-pressed="false">Móvil</button></div></div>
+        <label class="search directory-search"><span>⌕</span><input id="search" aria-label="Buscar en directorio" type="search" placeholder="Buscar web" /></label>
+        <p id="directory-mobile-note" hidden>Si una vista móvil no carga, abre la web con ↗.</p>
         <div id="store-grid" class="store-grid" aria-live="polite"></div>
       </section>
 
       <section class="development" id="development">
         <div class="development-head">
-          <div><p class="eyebrow">ZONA DE TRABAJO · TEMPORAL</p><h2>Revisar Goodstores</h2></div>
+          <div><h2>Desarrollo</h2></div>
           <p id="review-count" class="count">0 por revisar</p>
         </div>
-        <p class="development-copy">Explora cada referencia como una mini visita. Pasa el cursor por la captura para recorrer la página y decide si entra en Vitrea.</p>
         <section id="sync-panel" class="sync-panel" aria-label="Selecciones compartidas">
-          <div><strong>Selecciones compartidas</strong><p id="sync-message" role="status">Conectando…</p><p>Acceso abierto: todos podemos ver y editar las selecciones de Eli y Diego.</p></div>
-          <button id="sync-import" type="button" hidden>Compartir las selecciones guardadas en este navegador</button>
+          <div><p id="sync-message" role="status">Conectando…</p></div>
+          <button id="sync-import" type="button" hidden>Importar selecciones anteriores</button>
         </section>
         <div class="review-controls">
           <label class="search"><span>⌕</span><input id="review-search" type="search" placeholder="Buscar una tienda" /></label>
@@ -61,23 +52,17 @@
         <div class="gallery-toolbar"><div id="review-categories" class="filters" aria-label="Categorías generales"></div><div class="detail-modes" role="group" aria-label="Vista de las tarjetas"><button data-gallery-mode="desktop" aria-pressed="true">Escritorio</button><button data-gallery-mode="mobile" aria-pressed="false">Móvil</button></div></div><p id="gallery-note" hidden>Vista móvil integrada. Algunas tiendas impiden mostrar su web aquí.</p>
         <div id="review-list" class="review-list" aria-live="polite"></div>
       </section>
-
-      <section class="about" id="about">
-        <p class="eyebrow">CÓMO FUNCIONA</p>
-        <p class="about-copy">Pásame una tienda, su enlace y, si tienes una, una captura. Yo reviso la referencia y la incorporo a este directorio.</p>
-        <a href="#top" class="text-button">Proponer una tienda <span>→</span></a>
-      </section>
     </main>
 
-    <footer><a class="logo" href="#top">vitrea<span>.</span></a><p>Una colección en progreso.</p><p>© <span id="year"></span></p></footer>
+    <footer><a class="logo" href="#top">vitrea<span>.</span></a><p>© <span id="year"></span></p></footer>
 
     <dialog id="store-detail" class="store-detail" aria-labelledby="detail-title">
-      <div class="detail-topbar"><span class="logo">vitrea.</span><button id="detail-close" type="button" autofocus>Volver a la colección ×</button></div>
+      <div class="detail-topbar"><span class="logo">vitrea.</span><button id="detail-close" type="button" autofocus>Cerrar ×</button></div>
       <div class="detail-heading"><div><h2 id="detail-title"></h2><p id="detail-domain"></p></div><a id="detail-visit" class="detail-visit" target="_blank" rel="noopener">Visitar web ↗</a></div>
       <div class="detail-layout">
         <section class="detail-viewer" aria-label="Vistas de la web">
           <label class="page-selector">Página <select id="detail-page"><option value="home">Home</option><option value="about">About</option><option value="catalog">Catálogo</option><option value="product">Detalle de producto</option></select></label>
-          <form id="page-link-form" hidden><label>Enlace de esta página<input id="page-link" type="url" placeholder="https://tienda.com/…" required /></label><button>Guardar enlace</button><p>El enlace se comparte con el equipo.</p></form>
+          <form id="page-link-form" hidden><label>Enlace de esta página<input id="page-link" type="url" placeholder="https://tienda.com/…" required /></label><button>Guardar enlace</button></form>
           <div class="detail-modes" role="group" aria-label="Formato de vista"><button type="button" data-detail-mode="desktop" aria-pressed="true">Escritorio</button><button type="button" data-detail-mode="mobile" aria-pressed="false">Móvil</button></div>
           <p id="detail-note" class="detail-note"></p><div id="detail-preview" class="detail-preview"></div>
         </section>
