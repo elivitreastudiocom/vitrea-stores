@@ -19,6 +19,7 @@
       <nav aria-label="Navegación principal">
         <a href="#stores">Directorio</a>
         <a href="#development">Desarrollo</a>
+        <a href="#queue">En cola</a>
       </nav>
     </header>
 
@@ -52,6 +53,12 @@
         <div class="gallery-toolbar"><div id="review-categories" class="filters" aria-label="Categorías generales"></div><div class="detail-modes" role="group" aria-label="Vista de las tarjetas"><button data-gallery-mode="desktop" aria-pressed="true">Escritorio</button><button data-gallery-mode="mobile" aria-pressed="false">Móvil</button></div></div><p id="gallery-note" hidden>Vista móvil integrada. Algunas tiendas impiden mostrar su web aquí.</p>
         <div id="review-list" class="review-list" aria-live="polite"></div>
       </section>
+      <section class="queue-section" id="queue" hidden>
+        <div class="directory-head"><h2>En cola</h2><p id="queue-count" class="count"></p></div>
+        <form id="queue-form"><label for="queue-url">Nueva web</label><div class="queue-input-row"><input id="queue-url" type="text" inputmode="url" autocomplete="url" placeholder="https://…" required maxlength="2048" aria-describedby="queue-message" /><button type="submit">Añadir a la cola</button></div></form>
+        <p id="queue-message" role="status">Conectando…</p>
+        <div id="queue-list" aria-live="polite"></div>
+      </section>
     </main>
 
     <footer><a class="logo" href="#top">vitrea<span>.</span></a><p>© <span id="year"></span></p></footer>
@@ -74,6 +81,7 @@
     <script src="app.js"></script>
     <script src="detail.js"></script>
     <script src="sync.js"></script>
+    <script src="queue.js"></script>
     <script src="release.js"></script>
     <script src="live-updates.js"></script>
   </body>
