@@ -9,12 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="development.css" />
   </head>
   <body>
     <header class="site-header">
       <a class="logo" href="#top" aria-label="Vitrea, inicio">vitrea<span>.</span></a>
       <nav aria-label="Navegación principal">
         <a href="#stores">Directorio</a>
+        <a href="#development">Desarrollo <sup>temp</sup></a>
         <a href="#about">El proyecto</a>
       </nav>
       <a class="add-button" href="#about">Proponer tienda <span>↗</span></a>
@@ -41,6 +43,19 @@
         <div id="store-grid" class="store-grid" aria-live="polite"></div>
       </section>
 
+      <section class="development" id="development">
+        <div class="development-head">
+          <div><p class="eyebrow">ZONA DE TRABAJO · TEMPORAL</p><h2>Revisar Goodstores</h2></div>
+          <p id="review-count" class="count">0 por revisar</p>
+        </div>
+        <p class="development-copy">Una lista de referencias para decidir qué merece entrar en Vitrea. Tus decisiones se guardan en este navegador.</p>
+        <div class="review-controls">
+          <label class="search"><span>⌕</span><input id="review-search" type="search" placeholder="Buscar una tienda" /></label>
+          <div id="review-filters" class="filters" aria-label="Filtrar estado de revisión"></div>
+        </div>
+        <div id="review-list" class="review-list" aria-live="polite"></div>
+      </section>
+
       <section class="about" id="about">
         <p class="eyebrow">CÓMO FUNCIONA</p>
         <p class="about-copy">Pásame una tienda, su enlace y, si tienes una, una captura. Yo reviso la referencia y la incorporo a este directorio.</p>
@@ -51,6 +66,7 @@
     <footer><a class="logo" href="#top">vitrea<span>.</span></a><p>Una colección en progreso.</p><p>© <span id="year"></span></p></footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="review-stores.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

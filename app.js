@@ -9,6 +9,13 @@ const grid = document.querySelector('#store-grid');
 const filters = document.querySelector('#filters');
 const search = document.querySelector('#search');
 const count = document.querySelector('#store-count');
+const reviewList = document.querySelector('#review-list');
+const reviewFilters = document.querySelector('#review-filters');
+const reviewSearch = document.querySelector('#review-search');
+const reviewCount = document.querySelector('#review-count');
+const reviewStores = window.goodstores || [];
+let reviewFilter = 'Todas';
+let reviewStatus = JSON.parse(localStorage.getItem('vitrea-review-status') || '{}');
 
 function categories() { return ['Todas', ...new Set(stores.map(store => store.category).filter(Boolean))]; }
 function escapeHtml(value = '') { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
@@ -42,7 +49,44 @@ async function loadStores() {
   stores = (data || []).map(store => ({ ...store, image: store.image_url }));
   render();
 }
+
+function reviewLabel(status) {
+  return { include: 'Incluir', discard: 'Descartar' }[status] || 'Pendiente';
+}
+
+function renderReview() {
+  const term = reviewSearch.value.trim().toLowerCase();
+  const visible = reviewStores.filter(store => {
+    const status = reviewStatus[store.url] || 'pending';
+    return (reviewFilter === 'Todas' || reviewFilter === reviewLabel(status)) && `${store.name} ${store.url}`.toLowerCase().includes(term);
+  });
+  const pending = reviewStores.filter(store => !reviewStatus[store.url]).length;
+  reviewCount.textContent = `${pending} por revisar · ${reviewStores.length} referencias`;
+  reviewFilters.innerHTML = ['Todas', 'Pendiente', 'Incluir', 'Descartar'].map(filter => `<button class="filter ${filter === reviewFilter ? 'active' : ''}" data-review-filter="${filter}">${filter}</button>`).join('');
+  reviewList.innerHTML = visible.length ? visible.map((store, index) => {
+    const status = reviewStatus[store.url];
+    return `<article class="review-row"><span class="review-number">${String(index + 1).padStart(2, '0')}</span><div class="review-store"><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)} ↗</a><p>${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p></div><div class="review-actions"><button class="review-action include ${status === 'include' ? 'active' : ''}" data-review-status="include" data-review-url="${escapeHtml(store.url)}">Incluir</button><button class="review-action discard ${status === 'discard' ? 'active' : ''}" data-review-status="discard" data-review-url="${escapeHtml(store.url)}">Descartar</button></div></article>`;
+  }).join('') : '<p class="review-empty">No hay referencias con este filtro.</p>';
+}
+
+reviewFilters.addEventListener('click', event => {
+  const button = event.target.closest('[data-review-filter]');
+  if (!button) return;
+  reviewFilter = button.dataset.reviewFilter;
+  renderReview();
+});
+reviewSearch.addEventListener('input', renderReview);
+reviewList.addEventListener('click', event => {
+  const button = event.target.closest('[data-review-status]');
+  if (!button) return;
+  const { reviewStatus: status, reviewUrl: url } = button.dataset;
+  reviewStatus[url] = reviewStatus[url] === status ? undefined : status;
+  if (!reviewStatus[url]) delete reviewStatus[url];
+  localStorage.setItem('vitrea-review-status', JSON.stringify(reviewStatus));
+  renderReview();
+});
 filters.addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; render(); });
 search.addEventListener('input', render);
 document.querySelector('#year').textContent = new Date().getFullYear();
 loadStores();
+renderReview();
