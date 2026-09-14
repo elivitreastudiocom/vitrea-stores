@@ -1,11 +1,8 @@
-const stores = [{
-  name: 'KÖPPEN',
-  url: 'https://www.koppen.co/collections/all',
-  category: 'Cuidado bucal',
-  country: '',
-  description: 'Objetos y fórmulas para el cuidado oral.',
-  image: 'https://www.koppen.co/cdn/shop/files/Support_9b1de2bc-9267-4f53-91b5-94f82bcee8fc.png?v=1772759296&width=1400'
-}];
+const supabase = window.supabase.createClient(
+  'https://vgykdllkiymsxlcxutalq.supabase.co',
+  'sb_publishable_SIBEtvHlapd7OmM1YgKM2g_syRWTteh'
+);
+let stores = [];
 let selectedCategory = 'Todas';
 
 const grid = document.querySelector('#store-grid');
@@ -28,7 +25,24 @@ function render() {
       <div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${escapeHtml([store.category, store.country, store.description].filter(Boolean).join(' · '))}</p></div><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-hidden="true">↗</a></div>
     </article>`).join('') : `<p class="empty">Aún no hay tiendas aquí. Añade la primera desde el botón superior.</p>`;
 }
+
+async function loadStores() {
+  grid.innerHTML = '<p class="empty">Cargando tiendas…</p>';
+  const { data, error } = await supabase
+    .from('stores')
+    .select('name, url, category, description, image_url')
+    .eq('published', true)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    grid.innerHTML = '<p class="empty">No se han podido cargar las tiendas todavía.</p>';
+    return;
+  }
+
+  stores = (data || []).map(store => ({ ...store, image: store.image_url }));
+  render();
+}
 filters.addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; render(); });
 search.addEventListener('input', render);
 document.querySelector('#year').textContent = new Date().getFullYear();
-render();
+loadStores();
