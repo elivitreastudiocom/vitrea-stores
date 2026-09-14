@@ -1,5 +1,5 @@
 const supabaseClient = window.supabase?.createClient(
-  'https://vgykdllkiymsxlcxutalq.supabase.co',
+  'https://vgykdlkiymsxlcxutalq.supabase.co',
   'sb_publishable_SIBEtvHlapd7OmM1YgKM2g_syRWTteh'
 );
 let stores = [];
@@ -27,9 +27,11 @@ const categoryGroups = {
 function broadCategory(store) { return Object.keys(categoryGroups).reverse().find(key => categoryGroups[key].includes(store.name)) || 'Otras / Sin clasificar'; }
 function inclusionSwitch(store, person) {
  const included = (reviewDecisions[store.url] || {})[person] === 'include';
- return `<button type="button" class="inclusion-switch" role="switch" aria-checked="${included}" aria-label="${person === 'eli' ? 'Eli' : 'Diego'}: incluir ${escapeHtml(store.name)}" data-reviewer="${person}" data-review-status="include" data-review-url="${escapeHtml(store.url)}"><span>${person === 'eli' ? 'Eli' : 'Diego'}</span><span class="switch-track" aria-hidden="true"></span><span class="switch-caption">${included ? 'Incluida' : 'No incluida'}</span></button>`;
+ const connected = typeof sharedState !== 'undefined' && sharedState.ready;
+ const editable = connected && !sharedState.busy.has(store.url + '|' + person);
+ return `<button type="button" class="inclusion-switch" ${editable ? '' : 'disabled'} title="${!connected ? 'Conectando con las selecciones compartidas' : !editable ? 'Guardando selección' : 'Guardar selección compartida'}" role="switch" aria-checked="${included}" aria-label="${person === 'eli' ? 'Eli' : 'Diego'}: incluir ${escapeHtml(store.name)}" data-reviewer="${person}" data-review-status="include" data-review-url="${escapeHtml(store.url)}"><span>${person === 'eli' ? 'Eli' : 'Diego'}</span><span class="switch-track" aria-hidden="true"></span><span class="switch-caption">${!connected ? 'Sin conectar' : included ? 'Incluida' : 'No incluida'}</span></button>`;
 }
-let reviewDecisions = JSON.parse(localStorage.getItem('vitrea-review-decisions') || '{}');
+let reviewDecisions = {};
 
 function categories() { return ['Todas', ...new Set(stores.map(store => store.category).filter(Boolean))]; }
 function escapeHtml(value = '') { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
@@ -110,14 +112,8 @@ reviewSearch.addEventListener('input', renderReview);
 reviewList.addEventListener('click', event => {
   const button = event.target.closest('[data-review-status]');
   if (!button) return;
-  const { reviewer, reviewStatus: status, reviewUrl: url } = button.dataset;
-  const decisions = reviewDecisions[url] || {};
-  decisions[reviewer] = decisions[reviewer] === status ? undefined : status;
-  if (!decisions[reviewer]) delete decisions[reviewer];
-  reviewDecisions[url] = decisions;
-  if (!Object.keys(decisions).length) delete reviewDecisions[url];
-  localStorage.setItem('vitrea-review-decisions', JSON.stringify(reviewDecisions));
-  renderReview();
+  const { reviewer, reviewUrl: url } = button.dataset;
+  sharedState.toggle(url, reviewer);
 });
 filters.addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; render(); });
 search.addEventListener('input', render);

@@ -6,7 +6,7 @@ const knownProperties = {
 let detailStore;
 let detailMode = 'desktop';
 let detailPage = 'home';
-let pageLinks = JSON.parse(localStorage.getItem('vitrea-page-links') || '{}');
+let pageLinks = {};
 function selectedPageUrl() { return detailPage === 'home' ? validWebsite(detailStore.url) : validWebsite((pageLinks[detailStore.url] || {})[detailPage]); }
 let detailOpener;
 let previousOverflow;
@@ -40,6 +40,7 @@ function openStoreDetail(store, opener) {
   previousOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
   detailDialog.showModal();
+  updateDetailReviewStatus();
   detailDialog.scrollTop = 0;
   detailPage = 'home';
   detailDialog.querySelector('#detail-page').value = 'home';
@@ -99,5 +100,24 @@ detailDialog.addEventListener('close', () => {
 });
 
 detailDialog.querySelector('#detail-page').addEventListener('change', event => { detailPage = event.target.value; showDetailMode(detailMode); });
-detailDialog.querySelector('#page-link-form').addEventListener('submit', event => { event.preventDefault(); const input = detailDialog.querySelector('#page-link'); const url = validWebsite(input.value); if (!url) { input.setCustomValidity('Introduce un enlace http o https válido.'); input.reportValidity(); return; } input.setCustomValidity(''); pageLinks[detailStore.url] = {...pageLinks[detailStore.url], [detailPage]: url}; localStorage.setItem('vitrea-page-links', JSON.stringify(pageLinks)); showDetailMode(detailMode); });
+detailDialog.querySelector('#page-link-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const input = detailDialog.querySelector('#page-link');
+  const url = validWebsite(input.value);
+  if (!url) { input.setCustomValidity('Introduce un enlace http o https válido.'); input.reportValidity(); return; }
+  input.setCustomValidity('');
+  const button = event.currentTarget.querySelector('button'); button.disabled = true;
+  const storeUrl = detailStore.url; const type = detailPage;
+  try {
+    const saved = await sharedState.savePage(storeUrl, type, url);
+    if (saved && detailDialog.open && detailStore.url === storeUrl && detailPage === type) showDetailMode(detailMode);
+    if (!saved) input.setCustomValidity('No se ha guardado. Comprueba la conexión y vuelve a intentarlo.');
+    input.reportValidity();
+  } finally { button.disabled = false; }
+});
+function updateDetailReviewStatus() {
+  if (!detailDialog.open || !detailStore) return;
+  detailDialog.querySelector('#detail-review-status').textContent = !sharedState.ready ? 'Conectando con las selecciones del equipo…' : ['eli','diego'].map(person => `${person === 'eli' ? 'Eli' : 'Diego'}: ${(reviewDecisions[detailStore.url] || {})[person] === 'include' ? 'Incluida' : 'No incluida'}`).join(' · ');
+}
+
 detailDialog.querySelector('#page-link').addEventListener('input', event => event.target.setCustomValidity(''));
