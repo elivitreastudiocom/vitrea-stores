@@ -1,4 +1,4 @@
-const supabase = window.supabase.createClient(
+const supabaseClient = window.supabase.createClient(
   'https://vgykdllkiymsxlcxutalq.supabase.co',
   'sb_publishable_SIBEtvHlapd7OmM1YgKM2g_syRWTteh'
 );
@@ -28,7 +28,7 @@ function render() {
 
 async function loadStores() {
   grid.innerHTML = '<p class="empty">Cargando tiendas…</p>';
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('stores')
     .select('name, url, category, description, image_url')
     .eq('published', true)
