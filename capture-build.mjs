@@ -28,7 +28,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion='clean-overlays-v3';
+ const captureVersion=/^(www\.)?(skallstudio\.com|louloudesaison\.com|chantelle\.com|driesvannoten\.com|siha\.com\.au|area51store\.co\.nz|balmoralrunning\.com)$/.test(new URL(url).hostname)?'clean-overlays-v4':'clean-overlays-v3';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -67,6 +67,7 @@ async function capture({url,mode}){
   // Keep access checks, age gates and the actual page content intact.
   await page.waitForTimeout(2000);
   await page.evaluate(()=>{
+   const cleanOverlays=()=>{
    const providers=['.klaviyo-form-overlay',
     '[data-testid="POPUP"]','#onetrust-banner-sdk','#onetrust-consent-sdk',
     '#CybotCookiebotDialog','#CybotCookiebotDialogBodyUnderlay','.cky-consent-container',
@@ -74,14 +75,14 @@ async function capture({url,mode}){
     '#shopify-pc__prefs__dialog','#shopify-pc__banner','#shopify-privacy-banner',
     '#CookiebotWidget','.iubenda-cs-container','#iubenda-cs-banner',
     '#didomi-host','#consent-root','.needsclick.kl-private-reset-css-Xuajs1[role="dialog"]'];
-   const promotion=/cookie|consent|newsletter|subscribe|sign up|signup|first order|first purchase|discount|off your|join our|join the|exclusive offer|stay in touch|stay updated|privacy preferences/i;
+   const promotion=/cookie|consent|newsletter|subscribe|sign up|signup|first order|first purchase|discount|off your|join our|join the|exclusive offer|stay in touch|stay updated|privacy preferences|country|region|currency|language|which boutique|receive.*full.size|free gift/i;
    const restricted=/verify your age|age verification|access denied|captcha|sign in to continue/i;
-   const hide=el=>{el.setAttribute('data-capture-overlay','');el.style.setProperty('display','none','important');};
+   const hide=el=>{if(el.style.getPropertyValue('display')==='none')return;el.setAttribute('data-capture-overlay','');el.style.setProperty('display','none','important');};
    document.querySelectorAll(providers.join(',')).forEach(hide);
    // Identify large fixed overlays by their purpose, not just their position.
    for(const el of document.querySelectorAll('[role="dialog"],dialog,[aria-modal="true"],body *')){
     const rect=el.getBoundingClientRect();
-    if(!rect.width||!rect.height)continue;
+    if(!rect.width||!rect.height||/^(HEADER|NAV|MAIN)$/.test(el.tagName))continue;
     const style=getComputedStyle(el);
     const modal=el.matches('[role="dialog"],dialog[open],[aria-modal="true"]');
     if(!modal&&!(style.position==='fixed'&&rect.height>100&&rect.width>200))continue;
@@ -100,6 +101,11 @@ async function capture({url,mode}){
    document.querySelectorAll('.modal-backdrop,.popup-overlay,.newsletter-overlay,.klaviyo-form-overlay').forEach(el=>{
     if(!(el.innerText||'').trim())hide(el);
    });
+   };
+   cleanOverlays();
+   // Some providers appear when screenshot animations finish; keep cleaning until capture.
+   let scheduled=false;
+   new MutationObserver(()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;cleanOverlays();});}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','open']});
    document.documentElement.style.setProperty('overflow','auto','important');
    document.body.style.setProperty('overflow','auto','important');
    window.scrollTo(0,0);
