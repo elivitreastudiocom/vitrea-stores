@@ -113,7 +113,7 @@ async function capture({url,mode}){
  finally{await browser.close().catch(()=>{});}
 }
 const pending=[...jobs];
-await Promise.all(Array.from({length:3},async()=>{while(pending.length)await capture(pending.shift());}));
+await Promise.all(Array.from({length:6},async()=>{while(pending.length)await capture(pending.shift());}));
 await fs.writeFile(`${output}/captures.js`,`window.galleryCaptures = ${JSON.stringify(manifest)};\n`);
 const successful=Object.values(manifest).reduce((n,modes)=>n+Object.keys(modes).length,0);
 console.log(`Gallery built: ${successful}/${jobs.length} captures. Unavailable previews have an explicit fallback.`);
