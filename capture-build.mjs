@@ -28,7 +28,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion=mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'&&url==='https://fume-studio.com/collections/all'?'gallery-mobile2x-v12':'gallery-hq-v11';
+ const captureVersion=mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
