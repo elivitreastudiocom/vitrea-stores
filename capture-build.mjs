@@ -47,8 +47,9 @@ async function capture({url,mode}){
  const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:1,locale:'en-GB',colorScheme:'light',serviceWorkers:'block'});
  try{
   const page=await context.newPage();
-  const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:25000});
+  const response=await page.goto(url,{waitUntil:'commit',timeout:45000});
   if(response&&response.status()>=400)throw new Error(`HTTP ${response.status()}`);
+  await page.waitForLoadState('domcontentloaded',{timeout:15000}).catch(()=>{});
   await page.waitForLoadState('networkidle',{timeout:5000}).catch(()=>{});
   if(new URL(url).hostname==='tadaimacph.com'){
    const close=page.locator('button.klaviyo-close-form');
@@ -124,8 +125,8 @@ async function capture({url,mode}){
   const session=await context.newCDPSession(page);
   const shot=await Promise.race([
    session.send('Page.captureScreenshot',{format:'jpeg',quality:85,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5)),scale:1}}),
-   new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),20000))
-  ]);
+   new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
+  ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:85,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
   const bytes=Buffer.from(shot.data,'base64');
   await session.detach();
   await sharp(bytes).resize({width:mobile?390:600,withoutEnlargement:true}).jpeg({quality:82}).toFile(`${output}/${imagePath}`);
@@ -135,7 +136,7 @@ async function capture({url,mode}){
  finally{await browser.close().catch(()=>{});}
 }
 const pending=[...jobs];
-await Promise.all(Array.from({length:6},async()=>{while(pending.length)await capture(pending.shift());}));
+await Promise.all(Array.from({length:2},async()=>{while(pending.length)await capture(pending.shift());}));
 await fs.writeFile(`${output}/captures.js`,`window.galleryCaptures = ${JSON.stringify(manifest)};\n`);
 const successful=Object.values(manifest).reduce((n,modes)=>n+Object.keys(modes).length,0);
 console.log(`Gallery built: ${successful}/${jobs.length} captures. Unavailable previews have an explicit fallback.`);
