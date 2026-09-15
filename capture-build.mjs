@@ -28,7 +28,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion=/^https:\/\/(tayanecklace\.com|tadaimacph\.com)\//.test(url)?'v2':'v1';
+ const captureVersion='clean-overlays-v3';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -63,6 +63,47 @@ async function capture({url,mode}){
   if(/access denied|just a moment|checking your browser|robot check|attention required|page not found/i.test(title))throw new Error('Capture blocked');
   await page.locator('body').waitFor({state:'visible',timeout:5000});
   await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2000))]));
+  // Dismiss only marketing/consent UI in this disposable screenshot session.
+  // Keep access checks, age gates and the actual page content intact.
+  await page.waitForTimeout(2000);
+  await page.evaluate(()=>{
+   const providers=['.klaviyo-form-overlay',
+    '[data-testid="POPUP"]','#onetrust-banner-sdk','#onetrust-consent-sdk',
+    '#CybotCookiebotDialog','#CybotCookiebotDialogBodyUnderlay','.cky-consent-container',
+    '.cky-overlay','.shopify-pc__banner','.shopify-pc__prefs__dialog',
+    '#shopify-pc__prefs__dialog','#shopify-pc__banner','#shopify-privacy-banner',
+    '#CookiebotWidget','.iubenda-cs-container','#iubenda-cs-banner',
+    '#didomi-host','#consent-root','.needsclick.kl-private-reset-css-Xuajs1[role="dialog"]'];
+   const promotion=/cookie|consent|newsletter|subscribe|sign up|signup|first order|first purchase|discount|off your|join our|join the|exclusive offer|stay in touch|stay updated|privacy preferences/i;
+   const restricted=/verify your age|age verification|access denied|captcha|sign in to continue/i;
+   const hide=el=>{el.setAttribute('data-capture-overlay','');el.style.setProperty('display','none','important');};
+   document.querySelectorAll(providers.join(',')).forEach(hide);
+   // Identify large fixed overlays by their purpose, not just their position.
+   for(const el of document.querySelectorAll('[role="dialog"],dialog,[aria-modal="true"],body *')){
+    const rect=el.getBoundingClientRect();
+    if(!rect.width||!rect.height)continue;
+    const style=getComputedStyle(el);
+    const modal=el.matches('[role="dialog"],dialog[open],[aria-modal="true"]');
+    if(!modal&&!(style.position==='fixed'&&rect.height>100&&rect.width>200))continue;
+    const text=(el.innerText||'').trim();
+    if(text.length>5000||restricted.test(text))continue;
+    if(promotion.test(text)){
+     hide(el);
+     const parent=el.parentElement;
+     if(parent&&parent!==document.body){
+      const ps=getComputedStyle(parent);
+      if(ps.position==='fixed'&&(parent.innerText||'').trim().length<5000&&!restricted.test(parent.innerText||''))hide(parent);
+     }
+    }
+   }
+   // Remove empty backdrops associated with dismissed marketing dialogs.
+   document.querySelectorAll('.modal-backdrop,.popup-overlay,.newsletter-overlay,.klaviyo-form-overlay').forEach(el=>{
+    if(!(el.innerText||'').trim())hide(el);
+   });
+   document.documentElement.style.setProperty('overflow','auto','important');
+   document.body.style.setProperty('overflow','auto','important');
+   window.scrollTo(0,0);
+  });
   const height=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
   const bytes=await page.screenshot({animations:'disabled',fullPage:!mobile,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5))},type:'jpeg',quality:85,timeout:15000});
   await sharp(bytes).resize({width:mobile?390:600,withoutEnlargement:true}).jpeg({quality:82}).toFile(`${output}/${imagePath}`);

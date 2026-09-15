@@ -54,3 +54,23 @@ footer .logo img{width:145px}
  footer{padding:24px 16px}
 }
 @media(prefers-reduced-motion:reduce){.shot{transition:none}}
+
+/* A single visual language for category, page and device switches. */
+.site-header .logo{gap:8px;align-items:baseline}
+body .brand-gallery{font-family:var(--serif)!important;font-size:var(--title-size)!important;font-weight:400;line-height:1}
+.site-header .logo img{width:194px}
+#templates>.directory-head{justify-content:flex-end;margin-bottom:24px}
+.directory-search{margin:24px 0 16px}
+#templates .directory-search{margin-top:0}
+.directory-toolbar{padding:8px;background:#efeeed;border:1px solid var(--line);border-radius:10px;margin:0 0 24px;gap:16px}
+.directory-toolbar>.filters,.directory-toolbar>.page-filters,.directory-toolbar>.detail-modes{padding:0;background:none;border:0;border-radius:0;gap:4px;display:flex;flex-wrap:wrap;align-items:center}
+.directory-toolbar button,.directory-toolbar>.filters .filter{border:0;border-radius:6px;background:transparent;color:var(--ink);padding:8px 12px;box-shadow:none;min-height:36px;line-height:1.4}
+.directory-toolbar button[aria-pressed=true],.directory-toolbar>.filters .filter.active{background:var(--ink);color:#fff}
+.directory-toolbar button:hover:not([aria-pressed=true]){background:#e1dfde}
+.directory-toolbar button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+@media(max-width:700px){
+ .site-header .logo img{width:160px}
+ .directory-toolbar{display:flex;flex-wrap:wrap;gap:12px}
+ .directory-toolbar>.filters,.directory-toolbar>.page-filters{justify-content:flex-start;flex-basis:100%}
+ .directory-toolbar>.detail-modes{margin-left:auto}
+}

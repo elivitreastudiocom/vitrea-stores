@@ -17,7 +17,7 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="logo" href="#top" aria-label="Vitrea, inicio"><img src="vitrea-logo.png" alt="Vítrea Studio" width="194" height="28" /></a>
+      <a class="logo" href="#top" aria-label="Vítrea Studio Gallery, inicio"><img src="vitrea-logo.png" alt="Vítrea Studio" width="194" height="28" /><span class="brand-gallery">Gallery</span></a>
       <nav aria-label="Navegación principal">
         <a href="#templates">Templates</a>
         <a href="#websites">Websites</a>
@@ -26,15 +26,13 @@
     </header>
 
     <main id="top">
-      <section class="hero"><h1>Vítrea Studio Gallery</h1></section>
 
-      <section class="directory" id="templates">
+      <section class="directory" id="templates" aria-label="Templates">
         <div class="directory-head">
-          <div><h2>Templates</h2></div>
-          <p id="store-count" class="count">0 tiendas</p>
+          <p id="store-count" class="count">0 templates</p>
         </div>
-        <div class="directory-toolbar"><div id="filters" class="filters" aria-label="Tipos de web"></div><div id="page-filters" class="page-filters" role="group" aria-label="Tipo de página"></div><div class="detail-modes" role="group" aria-label="Vista de Templates"><button data-directory-mode="desktop" aria-pressed="true">Desktop</button><button data-directory-mode="mobile" aria-pressed="false">Mobile</button></div></div>
         <label class="search directory-search"><span>⌕</span><input id="search" aria-label="Buscar en Templates" type="search" placeholder="Buscar plantilla" /></label>
+        <div class="directory-toolbar"><div id="filters" class="filters" aria-label="Tipos de web"></div><div id="page-filters" class="page-filters" role="group" aria-label="Tipo de página"></div><div class="detail-modes" role="group" aria-label="Vista de Templates"><button data-directory-mode="desktop" aria-pressed="true">Desktop</button><button data-directory-mode="mobile" aria-pressed="false">Mobile</button></div></div>
         <p id="directory-mobile-note" hidden>Si una vista móvil no carga, abre la web con ↗.</p>
         <div id="store-grid" class="store-grid" aria-live="polite"></div>
       </section>
@@ -42,8 +40,8 @@
       <section class="development" id="websites" hidden>
         <div class="development-head"><div><h2>Websites</h2><p class="websites-subtitle">Our handpicked selection</p></div><p id="review-count" class="count"></p></div>
         <p id="sync-message" class="websites-sync" role="status">Conectando…</p>
-        <div class="directory-toolbar"><div id="websites-filters" class="filters" aria-label="Tipos de web"></div><div id="websites-page-filters" class="page-filters" role="group" aria-label="Tipo de página"></div><div class="detail-modes" role="group" aria-label="Vista de Websites"><button data-gallery-mode="desktop" aria-pressed="true">Desktop</button><button data-gallery-mode="mobile" aria-pressed="false">Mobile</button></div></div>
         <label class="search directory-search"><span>⌕</span><input id="review-search" type="search" aria-label="Buscar en Websites" placeholder="Buscar web" /></label>
+        <div class="directory-toolbar"><div id="websites-filters" class="filters" aria-label="Tipos de web"></div><div id="websites-page-filters" class="page-filters" role="group" aria-label="Tipo de página"></div><div class="detail-modes" role="group" aria-label="Vista de Websites"><button data-gallery-mode="desktop" aria-pressed="true">Desktop</button><button data-gallery-mode="mobile" aria-pressed="false">Mobile</button></div></div>
         <p id="websites-mobile-note" hidden>Si una vista móvil no carga, abre la web con ↗.</p>
         <div id="review-list" class="review-list" aria-live="polite"></div>
       </section>
@@ -74,8 +72,8 @@
     <script src="review-stores.js"></script>
     <script src="catalog-data.js"></script>
     <script src="captures.js"></script>
-    <script src="app.js?v=brand"></script>
-    <script src="detail.js?v=brand"></script>
+    <script src="app.js?v=gallery3"></script>
+    <script src="detail.js?v=gallery3"></script>
     <script src="sync.js"></script>
     <script src="queue.js?v=templates"></script>
     <script src="release.js"></script>
