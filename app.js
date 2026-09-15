@@ -14,14 +14,15 @@ const reviewStores=window.goodstores||[];
 const pageTypes=[['home','Home'],['about','About'],['catalog','Catalog'],['product','Product']];
 const directoryState={category:null,page:'home',mode:'desktop',term:''};
 const websitesState={category:null,page:'home',mode:'desktop',term:''};
-function escapeHtml(value=''){const div=document.createElement('div');div.textContent=value;return div.innerHTML;}
+function escapeHtml(value=''){const div=document.createElement('div');div.textContent=value;return div.innerHTML.replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function pageLabel(type){return pageTypes.find(item=>item[0]===type)?.[1]||type;}
 function metadata(store){return window.catalogData?.[store.url]||{};}
 function categories(collection){return ['Ecommerce','Portfolio','Blog','Others'].filter(tag=>collection.some(store=>storeTags(store).includes(tag)));}
 function storeTags(store){return metadata(store).tags||['Others'];}
 function filterCategory(store){return storeTags(store).join(' · ');}
-function storePageUrl(store,type){return type==='home'?store.url:pageLinks[store.url]?.[type]||metadata(store).pages?.[type];}
-function screenshotUrl(url,mode){return window.galleryCaptures?.[url]?.[mode]||null;}
+function storePageUrl(store,type){const value=type==='home'?store.url:pageLinks[store.url]?.[type]||metadata(store).pages?.[type];try{const url=new URL(value);return ['http:','https:'].includes(url.protocol)?url.href:null;}catch{return null;}}
+const captureIndex=Object.fromEntries(Object.entries(window.galleryCaptures||{}).map(([url,record])=>[new URL(url).href,record]));
+function screenshotUrl(url,mode){return captureIndex[new URL(url).href]?.[mode]||null;}
 function approvedWebsites(){return reviewStores.filter(store=>reviewDecisions[store.url]?.diego==='include');}
 function galleryEntries(collection,state){return collection.flatMap(store=>{
  const url=storePageUrl(store,state.page);
@@ -30,7 +31,7 @@ function galleryEntries(collection,state){return collection.flatMap(store=>{
 function cardMarkup({store,url,type},mode){
  const capture=screenshotUrl(url,mode);
  const src=capture||(mode==='desktop'?((type==='home'&&store.image)||'https://image.thum.io/get/width/600/crop/900/noanimate/'+url):null);
- const preview=src?`<img src="${escapeHtml(src)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)} · ${mode==='mobile'?'Mobile':'Desktop'}" loading="lazy" />`:'<span class="capture-unavailable">Vista móvil no disponible<br>Visitar web ↗</span>';
+ const preview=src?`<img src="${escapeHtml(src)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)} · ${mode==='mobile'?'Mobile':'Desktop'}" loading="lazy" />`:'<span class="capture-unavailable">Vista móvil no disponible</span>';
  return `<article class="store-card"><a href="${escapeHtml(url)}" data-store-url="${escapeHtml(store.url)}" data-page="${type}" aria-label="Ver ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot ${src?'':'no-capture'}">${preview}</div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${filterCategory(store)} · ${pageLabel(type)}</p></div><a class="card-visit" title="Visitar web" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visitar ${escapeHtml(store.name)} · ${pageLabel(type)}">↗</a></div></article>`;
 }
 function renderGallery(collection,state,target,categoryId,pageId,countId){
@@ -40,7 +41,7 @@ function renderGallery(collection,state,target,categoryId,pageId,countId){
  document.getElementById(countId).textContent=`${entries.length} ${state.page==='home'?(state===directoryState?(entries.length===1?'plantilla':'plantillas'):(entries.length===1?'web':'webs')):(entries.length===1?'página':'páginas')}`;
  target.innerHTML=entries.length?entries.map(entry=>cardMarkup(entry,state.mode)).join(''):`<p class="empty">${state.page==='home'?'No hay webs con estos filtros.':'No hay páginas '+pageLabel(state.page)+' guardadas con estos filtros.'}</p>`;
  target.classList.toggle('directory-mobile',state.mode==='mobile');
- target.querySelectorAll('.shot img').forEach(img=>img.addEventListener('error',()=>{const shot=img.parentElement;shot.classList.add('no-capture');shot.innerHTML='<span class="capture-unavailable">Captura no disponible<br>Visitar web ↗</span>';},{once:true}));
+ target.querySelectorAll('.shot img').forEach(img=>img.addEventListener('error',()=>{const shot=img.parentElement;shot.classList.add('no-capture');shot.innerHTML='<span class="capture-unavailable">Captura no disponible</span>';},{once:true}));
 }
 function render(){renderGallery(stores,directoryState,grid,'filters','page-filters','store-count');document.querySelector('#directory-mobile-note').hidden=true;}
 function renderReview(){

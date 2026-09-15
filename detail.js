@@ -75,7 +75,7 @@ for (const container of [grid, reviewList]) {
     if (link.hasAttribute('data-direct-visit')) return;
     // Keep the directory's explicit external arrow as a direct visit.
     if (link.closest('.card-info') && link.getAttribute('aria-hidden') === 'true') return;
-    const store = [...stores, ...reviewStores].find(item => validWebsite(item.url) === (link.dataset.storeUrl || link.href));
+    const store = [...stores, ...reviewStores].find(item => validWebsite(item.url) === validWebsite(link.dataset.storeUrl || link.href));
     if (!store) return;
     event.preventDefault();
     openStoreDetail(store, link, link.dataset.page || 'home', container===grid?directoryMode:galleryMode);

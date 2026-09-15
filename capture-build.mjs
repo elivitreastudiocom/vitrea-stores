@@ -55,7 +55,7 @@ async function capture({url,mode}){
   await page.locator('body').waitFor({state:'visible',timeout:5000});
   await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2000))]));
   const height=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
-  const bytes=await page.screenshot({fullPage:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5))},type:'jpeg',quality:85,timeout:15000});
+  const bytes=await page.screenshot({animations:'disabled',fullPage:!mobile,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5))},type:'jpeg',quality:85,timeout:15000});
   await sharp(bytes).resize({width:mobile?390:600,withoutEnlargement:true}).jpeg({quality:82}).toFile(`${output}/${imagePath}`);
   (manifest[url]||={})[mode]=imagePath;
   console.log(`Captured ${mode} ${url}`);
