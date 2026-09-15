@@ -26,6 +26,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
  }
 }
 const manifest={};
+const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:v1`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
@@ -39,7 +40,7 @@ async function capture({url,mode}){
    }
   }catch{}
  }
- const browser=await playwright.launch({args:chromium.args.filter(arg=>!['--single-process','--disable-web-security','--disable-site-isolation-trials','--allow-running-insecure-content'].includes(arg)),executablePath:await chromium.executablePath(),headless:true});
+ const browser=await playwright.launch({args:chromium.args.filter(arg=>!['--single-process','--disable-web-security','--disable-site-isolation-trials','--allow-running-insecure-content'].includes(arg)),executablePath,headless:true});
  const mobile=mode==='mobile';
  const width=mobile?390:1440;
  const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:1,locale:'en-GB',colorScheme:'light',serviceWorkers:'block'});
