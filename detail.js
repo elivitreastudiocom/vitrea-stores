@@ -26,7 +26,7 @@ function openStoreDetail(store, opener, initialPage='home', initialMode='desktop
     ['Categoría', details.category || 'E-commerce'],
     ['Sector', details.industry], ['Estilo', details.style],
     ['Tipografía', details.typography], ['Plataforma', details.platform],
-    ['Producto', details.product], ['Colección', isReview ? 'Goodstores · En revisión' : 'Directorio Vitrea']
+    ['Producto', details.product], ['Colección', isReview ? 'Websites' : 'Directorio Vitrea']
   ];
   detailDialog.querySelector('#detail-properties').innerHTML = rows.filter(([,value])=>value).map(([label, value]) => `<div><dt>${label}</dt><dd class="${value ? '' : 'undocumented'}">${escapeHtml(value || 'Por documentar')}</dd></div>`).join('');
   const description = detailDialog.querySelector('#detail-description');
@@ -35,7 +35,7 @@ function openStoreDetail(store, opener, initialPage='home', initialMode='desktop
   const source = detailDialog.querySelector('#detail-source');
   source.hidden = !details.source;
   source.href = details.source || '#';
-  detailDialog.querySelector('#detail-review-status').textContent = isReview ? `Eli: ${reviewLabel((reviewDecisions[store.url] || {}).eli)} · Diego: ${reviewLabel((reviewDecisions[store.url] || {}).diego)}` : '';
+  detailDialog.querySelector('#detail-review-status').textContent = '';
   previousOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
   detailDialog.showModal();
@@ -88,7 +88,7 @@ for (const container of [grid, reviewList]) {
     const store = [...stores, ...reviewStores].find(item => validWebsite(item.url) === (link.dataset.storeUrl || link.href));
     if (!store) return;
     event.preventDefault();
-    openStoreDetail(store, link, link.dataset.page || 'home', container===grid?directoryMode:'desktop');
+    openStoreDetail(store, link, link.dataset.page || 'home', container===grid?directoryMode:galleryMode);
   });
 }
 detailDialog.querySelector('#detail-close').addEventListener('click', () => detailDialog.close());
@@ -115,10 +115,6 @@ detailDialog.querySelector('#page-link-form').addEventListener('submit', async e
     input.reportValidity();
   } finally { button.disabled = false; }
 });
-function updateDetailReviewStatus() {
-  if (!detailDialog.open || !detailStore) return;
-  if (!reviewStores.some(store=>store.url===detailStore.url)) {detailDialog.querySelector('#detail-review-status').textContent='';return;}
-  detailDialog.querySelector('#detail-review-status').textContent = !sharedState.ready ? 'Conectando con las selecciones del equipo…' : ['eli','diego'].map(person => `${person === 'eli' ? 'Eli' : 'Diego'}: ${reviewLabel((reviewDecisions[detailStore.url] || {})[person])}`).join(' · ');
-}
+function updateDetailReviewStatus() {detailDialog.querySelector('#detail-review-status').textContent='';}
 
 detailDialog.querySelector('#page-link').addEventListener('input', event => event.target.setCustomValidity(''));

@@ -1,7 +1,8 @@
 // Shared inbox. Processing into the gallery is a separate editorial action.
 (() => {
-  const sections = ['stores','development','queue'];
+  const sections = ['stores','websites','queue'];
   function showSection() {
+    if(location.hash==='#development')history.replaceState(null,'','#websites');
     const selected = sections.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'stores';
     sections.forEach(id => {document.getElementById(id).hidden = id !== selected;});
     document.querySelectorAll('.site-header nav a').forEach(link => {
@@ -54,7 +55,7 @@
     let url;
     try{url=normalize(input.value);}catch{status('Introduce un enlace web válido.',true);input.focus();return;}
     if(stores.some(store=>normalize(store.url)===url)){status('Esta web ya está en el Directorio.');return;}
-    if(reviewStores.some(store=>normalize(store.url)===url)){status('Esta web ya está en Desarrollo.');return;}
+    if(approvedWebsites().some(store=>normalize(store.url)===url)){status('Esta web ya está en Websites.');return;}
     saving=true;button.disabled=true;sharedState.busy.add('queue');status('Guardando…');
     try{
       const {error}=await supabaseClient.from('vitrea_queue').insert({url});

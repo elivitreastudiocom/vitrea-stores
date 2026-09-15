@@ -19,7 +19,7 @@
       <a class="logo" href="#top" aria-label="Vitrea, inicio">vitrea<span>.</span></a>
       <nav aria-label="Navegación principal">
         <a href="#stores">Directorio</a>
-        <a href="#development">Desarrollo</a>
+        <a href="#websites">Websites</a>
         <a href="#queue">En cola</a>
       </nav>
     </header>
@@ -38,20 +38,12 @@
         <div id="store-grid" class="store-grid" aria-live="polite"></div>
       </section>
 
-      <section class="development" id="development">
-        <div class="development-head">
-          <div><h2>Desarrollo</h2></div>
-          <p id="review-count" class="count">0 por revisar</p>
-        </div>
-        <section id="sync-panel" class="sync-panel" aria-label="Selecciones compartidas">
-          <div><p id="sync-message" role="status">Conectando…</p></div>
-          <button id="sync-import" type="button" hidden>Importar selecciones anteriores</button>
-        </section>
-        <div class="review-controls">
-          <label class="search"><span>⌕</span><input id="review-search" type="search" placeholder="Buscar una tienda" /></label>
-          <div id="review-filters" class="filters" aria-label="Filtrar estado de revisión"></div>
-        </div>
-        <div class="gallery-toolbar"><div id="review-categories" class="filters" aria-label="Categorías generales"></div><div class="detail-modes" role="group" aria-label="Vista de las tarjetas"><button data-gallery-mode="desktop" aria-pressed="true">Desktop</button><button data-gallery-mode="mobile" aria-pressed="false">Mobile</button></div></div><p id="gallery-note" hidden>Vista móvil integrada. Algunas tiendas impiden mostrar su web aquí.</p>
+      <section class="development" id="websites" hidden>
+        <div class="development-head"><div><h2>Websites</h2><p class="websites-subtitle">Our handpicked selection</p></div><p id="review-count" class="count"></p></div>
+        <p id="sync-message" class="websites-sync" role="status">Conectando…</p>
+        <div class="directory-toolbar"><div id="websites-filters" class="filters" aria-label="Tipos de web"></div><div id="websites-page-filters" class="page-filters" role="group" aria-label="Tipo de página"></div><div class="detail-modes" role="group" aria-label="Vista de Websites"><button data-gallery-mode="desktop" aria-pressed="true">Desktop</button><button data-gallery-mode="mobile" aria-pressed="false">Mobile</button></div></div>
+        <label class="search directory-search"><span>⌕</span><input id="review-search" type="search" aria-label="Buscar en Websites" placeholder="Buscar web" /></label>
+        <p id="websites-mobile-note" hidden>Si una vista móvil no carga, abre la web con ↗.</p>
         <div id="review-list" class="review-list" aria-live="polite"></div>
       </section>
       <section class="queue-section" id="queue" hidden>
@@ -82,7 +74,7 @@
     <script src="app.js"></script>
     <script src="detail.js"></script>
     <script src="sync.js"></script>
-    <script src="queue.js"></script>
+    <script src="queue.js?v=websites"></script>
     <script src="release.js"></script>
     <script src="live-updates.js"></script>
   </body>
