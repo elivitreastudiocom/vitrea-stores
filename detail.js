@@ -68,7 +68,7 @@ function showDetailMode(mode) {
   img.onerror=()=>{img.remove();note.textContent='Captura no disponible. Puedes visitar la web con ↗.';};
   preview.append(img);
 }
-for (const container of [grid, reviewList]) {
+for (const container of [grid]) {
   container.addEventListener('click', event => {
     const link = event.target.closest('a');
     if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;

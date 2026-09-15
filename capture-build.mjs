@@ -8,7 +8,7 @@ import sharp from 'sharp';
 const output='dist';
 await fs.mkdir(`${output}/captures`,{recursive:true});
 for(const file of await fs.readdir('.')){
- if(/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/.test(file)||['index.html','version.json'].includes(file)) await fs.copyFile(file,path.join(output,file));
+ if(/\.(css|js|png|jpg|jpeg|webp|svg|ico|otf|ttf)$/.test(file)||['index.html','version.json'].includes(file)) await fs.copyFile(file,path.join(output,file));
 }
 const source=await fs.readFile('catalog-data.js','utf8');
 const catalog=JSON.parse(source.slice(source.indexOf('=')+1).trim().replace(/;$/,''));
