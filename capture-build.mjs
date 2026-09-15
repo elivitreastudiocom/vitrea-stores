@@ -28,7 +28,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion='gallery-hq-v11';
+ const captureVersion=mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'&&url==='https://fume-studio.com/collections/all'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -67,6 +67,11 @@ async function capture({url,mode}){
   // Dismiss only marketing/consent UI in this disposable screenshot session.
   // Keep access checks, age gates and the actual page content intact.
   await page.waitForTimeout(1200);
+  // Trigger in-view reveals in the region that will be photographed, then return to the top.
+  if(!mobile){
+   for(const y of [750,1500]){await page.evaluate(y=>window.scrollTo(0,y),y);await page.waitForTimeout(400);}
+   await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(400);
+  }
   // Decode the images in the photographed area, including lazy-loaded catalog rows.
   await page.evaluate(async()=>{
    const limit=Math.round(innerWidth*1.5);
@@ -131,7 +136,7 @@ async function capture({url,mode}){
   // Capture the rendered surface directly without resizing the layout viewport.
   const session=await context.newCDPSession(page);
   const shot=await Promise.race([
-   session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5)),scale:1}}),
+   session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5)),scale:mobile?2:1}}),
    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
   ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
   const bytes=Buffer.from(shot.data,'base64');
