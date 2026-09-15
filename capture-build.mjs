@@ -28,7 +28,8 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const digest=crypto.createHash('sha256').update(`${url}:${mode}:v1`).digest('hex').slice(0,20);
+ const captureVersion=/^https:\/\/(tayanecklace\.com|tadaimacph\.com)\//.test(url)?'v2':'v1';
+ const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
  if(previous===imagePath){
@@ -46,10 +47,18 @@ async function capture({url,mode}){
  const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:1,locale:'en-GB',colorScheme:'light',serviceWorkers:'block'});
  try{
   const page=await context.newPage();
-  await page.route('**/*',route=>['media'].includes(route.request().resourceType())?route.abort():route.continue());
   const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:25000});
   if(response&&response.status()>=400)throw new Error(`HTTP ${response.status()}`);
   await page.waitForLoadState('networkidle',{timeout:5000}).catch(()=>{});
+  if(new URL(url).hostname==='tadaimacph.com'){
+   const close=page.locator('button.klaviyo-close-form');
+   await close.waitFor({state:'visible',timeout:7000}).catch(()=>{});
+   if(await close.isVisible())await close.click();
+  }
+  await page.locator('video').evaluateAll(videos=>Promise.all(videos.filter(v=>v.getBoundingClientRect().top<innerHeight).map(v=>new Promise(resolve=>{
+   if(v.readyState>=2){resolve();return;}
+   v.addEventListener('loadeddata',resolve,{once:true});setTimeout(resolve,8000);
+  }))));
   const title=await page.title();
   if(/access denied|just a moment|checking your browser|robot check|attention required|page not found/i.test(title))throw new Error('Capture blocked');
   await page.locator('body').waitFor({state:'visible',timeout:5000});
