@@ -4,8 +4,7 @@ const supabaseClient = window.supabase?.createClient(
 );
 let stores = [
  {name:'Taya',url:'https://tayanecklace.com/',category:'E-commerce',industry:'Joyería'},
- {name:'Tadaima',url:'https://tadaimacph.com/',category:'E-commerce',industry:'Diseño y hogar'},
- {name:'Nossara',url:'https://nossara.com/',category:'E-commerce',industry:'Textil y hogar'}
+ {name:'Tadaima',url:'https://tadaimacph.com/',category:'E-commerce',industry:'Diseño y hogar'}
 ];
 
 let directoryMode='desktop', galleryMode='desktop';
@@ -17,30 +16,37 @@ const directoryState={category:null,page:'home',mode:'desktop',term:''};
 const websitesState={category:null,page:'home',mode:'desktop',term:''};
 function escapeHtml(value=''){const div=document.createElement('div');div.textContent=value;return div.innerHTML;}
 function pageLabel(type){return pageTypes.find(item=>item[0]===type)?.[1]||type;}
-function categories(){return ['Ecommerce','Portfolio','Blog','Others'];}
-function filterCategory(store){const value=(store.category||'E-commerce').toLowerCase().replace(/[- ]/g,'');return ({ecommerce:'Ecommerce',portfolio:'Portfolio',blog:'Blog'})[value]||'Others';}
+function metadata(store){return window.catalogData?.[store.url]||{};}
+function categories(collection){return ['Ecommerce','Portfolio','Blog','Others'].filter(tag=>collection.some(store=>storeTags(store).includes(tag)));}
+function storeTags(store){return metadata(store).tags||['Others'];}
+function filterCategory(store){return storeTags(store).join(' · ');}
+function storePageUrl(store,type){return type==='home'?store.url:pageLinks[store.url]?.[type]||metadata(store).pages?.[type];}
+function screenshotUrl(url,mode){return window.galleryCaptures?.[url]?.[mode]||null;}
 function approvedWebsites(){return reviewStores.filter(store=>reviewDecisions[store.url]?.diego==='include');}
 function galleryEntries(collection,state){return collection.flatMap(store=>{
- const url=state.page==='home'?store.url:pageLinks[store.url]?.[state.page];
- return url&&(!state.category||filterCategory(store)===state.category)&&`${store.name} ${store.category||''} ${store.description||''} ${store.url}`.toLowerCase().includes(state.term)?[{store,url,type:state.page}]:[];
+ const url=storePageUrl(store,state.page);
+ return url&&(!state.category||storeTags(store).includes(state.category))&&`${store.name} ${store.category||''} ${store.description||''} ${store.url}`.toLowerCase().includes(state.term)?[{store,url,type:state.page}]:[];
 });}
-const previewSizer=new ResizeObserver(entries=>entries.forEach(({target})=>{const frame=target.querySelector('iframe');if(!frame)return;const scale=target.clientWidth/390;frame.style.width='390px';frame.style.height=target.clientHeight/scale+'px';frame.style.transform=`scale(${scale})`;}));
-function cardMarkup({store,url,type}){return `<article class="store-card"><a href="${escapeHtml(url)}" data-store-url="${escapeHtml(store.url)}" data-page="${type}" aria-label="Ver ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot" data-preview-url="${escapeHtml(url)}"><img src="${escapeHtml((type==='home'&&store.image)||'https://image.thum.io/get/width/600/crop/900/noanimate/'+url)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)}" loading="lazy" /></div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${filterCategory(store)} · ${pageLabel(type)}</p></div><a class="card-visit" title="Visitar web" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visitar ${escapeHtml(store.name)} · ${pageLabel(type)}">↗</a></div></article>`;}
+function cardMarkup({store,url,type},mode){
+ const capture=screenshotUrl(url,mode);
+ const src=capture||(mode==='desktop'?((type==='home'&&store.image)||'https://image.thum.io/get/width/600/crop/900/noanimate/'+url):null);
+ const preview=src?`<img src="${escapeHtml(src)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)} · ${mode==='mobile'?'Mobile':'Desktop'}" loading="lazy" />`:'<span class="capture-unavailable">Vista móvil no disponible<br>Visitar web ↗</span>';
+ return `<article class="store-card"><a href="${escapeHtml(url)}" data-store-url="${escapeHtml(store.url)}" data-page="${type}" aria-label="Ver ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot ${src?'':'no-capture'}">${preview}</div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${filterCategory(store)} · ${pageLabel(type)}</p></div><a class="card-visit" title="Visitar web" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visitar ${escapeHtml(store.name)} · ${pageLabel(type)}">↗</a></div></article>`;
+}
 function renderGallery(collection,state,target,categoryId,pageId,countId){
- target.querySelectorAll('.shot').forEach(shot=>previewSizer.unobserve(shot));
- document.getElementById(categoryId).innerHTML=categories().map(category=>`<button class="filter ${category===state.category?'active':''}" aria-pressed="${category===state.category}" data-category="${category}">${category}</button>`).join('');
+ document.getElementById(categoryId).innerHTML=categories(collection).map(category=>`<button class="filter ${category===state.category?'active':''}" aria-pressed="${category===state.category}" data-category="${category}">${category}</button>`).join('');
  document.getElementById(pageId).innerHTML=pageTypes.map(([type,label])=>`<button type="button" data-page-type="${type}" aria-pressed="${type===state.page}">${label}</button>`).join('');
  const entries=galleryEntries(collection,state);
- document.getElementById(countId).textContent=`${entries.length} ${state.page==='home'?'webs':'páginas'}`;
- target.innerHTML=entries.length?entries.map(cardMarkup).join(''):`<p class="empty">${state.page==='home'?'No hay webs con estos filtros.':'No hay páginas '+pageLabel(state.page)+' guardadas con estos filtros.'}</p>`;
+ document.getElementById(countId).textContent=`${entries.length} ${state.page==='home'?(state===directoryState?(entries.length===1?'plantilla':'plantillas'):(entries.length===1?'web':'webs')):(entries.length===1?'página':'páginas')}`;
+ target.innerHTML=entries.length?entries.map(entry=>cardMarkup(entry,state.mode)).join(''):`<p class="empty">${state.page==='home'?'No hay webs con estos filtros.':'No hay páginas '+pageLabel(state.page)+' guardadas con estos filtros.'}</p>`;
  target.classList.toggle('directory-mobile',state.mode==='mobile');
- if(state.mode==='mobile')target.querySelectorAll('.shot').forEach(shot=>{const frame=document.createElement('iframe');frame.src=shot.dataset.previewUrl;frame.title='Vista móvil';frame.loading='lazy';frame.setAttribute('sandbox','allow-scripts allow-same-origin');frame.tabIndex=-1;shot.replaceChildren(frame);previewSizer.observe(shot);});
+ target.querySelectorAll('.shot img').forEach(img=>img.addEventListener('error',()=>{const shot=img.parentElement;shot.classList.add('no-capture');shot.innerHTML='<span class="capture-unavailable">Captura no disponible<br>Visitar web ↗</span>';},{once:true}));
 }
-function render(){renderGallery(stores,directoryState,grid,'filters','page-filters','store-count');document.querySelector('#directory-mobile-note').hidden=directoryState.mode!=='mobile';}
+function render(){renderGallery(stores,directoryState,grid,'filters','page-filters','store-count');document.querySelector('#directory-mobile-note').hidden=true;}
 function renderReview(){
  renderGallery(approvedWebsites(),websitesState,reviewList,'websites-filters','websites-page-filters','review-count');
  if(typeof sharedState==='undefined'||!sharedState.ready){reviewList.innerHTML='<p class="empty">Cargando webs…</p>';document.querySelector('#review-count').textContent='';}
- document.querySelector('#websites-mobile-note').hidden=websitesState.mode!=='mobile';
+ document.querySelector('#websites-mobile-note').hidden=true;
 }
 function wireGallery(state,categoryId,pageId,searchId,modeAttr,redraw){
  document.getElementById(categoryId).addEventListener('click',event=>{const button=event.target.closest('[data-category]');if(!button)return;state.category=state.category===button.dataset.category?null:button.dataset.category;redraw();});

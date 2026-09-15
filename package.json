@@ -1,0 +1,8 @@
+{
+  "name": "vitrea-gallery",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {"node": "22.x"},
+  "scripts": {"build": "node capture-build.mjs"},
+  "dependencies": {"@sparticuz/chromium": "153.0.0", "playwright-core": "1.63.0", "sharp": "0.34.5"}
+}

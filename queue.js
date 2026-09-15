@@ -1,9 +1,10 @@
 // Shared inbox. Processing into the gallery is a separate editorial action.
 (() => {
-  const sections = ['stores','websites','queue'];
+  const sections = ['templates','websites','queue'];
   function showSection() {
+    if(location.hash==='#stores')history.replaceState(null,'','#templates');
     if(location.hash==='#development')history.replaceState(null,'','#websites');
-    const selected = sections.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'stores';
+    const selected = sections.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'templates';
     sections.forEach(id => {document.getElementById(id).hidden = id !== selected;});
     document.querySelectorAll('.site-header nav a').forEach(link => {
       if (link.hash === '#' + selected) link.setAttribute('aria-current','page');

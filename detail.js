@@ -6,7 +6,7 @@ const knownProperties = {
 let detailStore;
 let detailMode = 'desktop';
 let detailPage = 'home';
-function selectedPageUrl() { return detailPage === 'home' ? validWebsite(detailStore.url) : validWebsite((pageLinks[detailStore.url] || {})[detailPage]); }
+function selectedPageUrl() { return validWebsite(storePageUrl(detailStore,detailPage)); }
 let detailOpener;
 let previousOverflow;
 function validWebsite(value) {
@@ -23,10 +23,10 @@ function openStoreDetail(store, opener, initialPage='home', initialMode='desktop
   detailDialog.querySelector('#detail-domain').textContent = new URL(url).hostname.replace(/^www\./, '');
   detailDialog.querySelector('#detail-visit').href = url;
   const rows = [
-    ['Categoría', details.category || 'E-commerce'],
+    ['Categoría', filterCategory(store)],
     ['Sector', details.industry], ['Estilo', details.style],
     ['Tipografía', details.typography], ['Plataforma', details.platform],
-    ['Producto', details.product], ['Colección', isReview ? 'Websites' : 'Directorio Vitrea']
+    ['Producto', details.product], ['Colección', isReview ? 'Websites' : 'Templates']
   ];
   detailDialog.querySelector('#detail-properties').innerHTML = rows.filter(([,value])=>value).map(([label, value]) => `<div><dt>${label}</dt><dd class="${value ? '' : 'undocumented'}">${escapeHtml(value || 'Por documentar')}</dd></div>`).join('');
   const description = detailDialog.querySelector('#detail-description');
@@ -42,7 +42,9 @@ function openStoreDetail(store, opener, initialPage='home', initialMode='desktop
   updateDetailReviewStatus();
   detailDialog.scrollTop = 0;
   detailPage = initialPage;
+  detailDialog.querySelector('#detail-page').innerHTML=pageTypes.filter(([type])=>!metadata(store).template||storePageUrl(store,type)).map(([type,label])=>`<option value="${type}">${label}</option>`).join('');
   detailDialog.querySelector('#detail-page').value = initialPage;
+  const journal=detailDialog.querySelector('#detail-blog');journal.hidden=!metadata(store).pages?.blog;journal.href=metadata(store).pages?.blog||'#';
   showDetailMode(initialMode);
 }
 function showDetailMode(mode) {
@@ -57,26 +59,14 @@ function showDetailMode(mode) {
   preview.replaceChildren();
   preview.className = `detail-preview ${mode}`;
   if (!pageUrl) { note.textContent = 'Añade el enlace real de esta página para ver su versión de escritorio o móvil.'; return; }
-  if (mode === 'desktop') {
-    note.textContent = '';
-    const status = document.createElement('p');
-    status.className = 'preview-status';
-    status.textContent = 'Cargando captura…';
-    const img = document.createElement('img');
-    img.alt = `Captura de escritorio de ${detailStore.name}`;
-    img.onload = () => status.remove();
-    img.onerror = () => { img.remove(); status.textContent = 'No se ha podido cargar la captura. Puedes visitar la web con el enlace superior.'; };
-    img.src = (detailPage === 'home' && detailStore.image) || `https://image.thum.io/get/width/600/crop/900/noanimate/${pageUrl}`;
-    preview.append(status, img);
-  } else {
-    note.textContent = 'Si la web bloquea la vista móvil, ábrela en «Visitar web».';
-    const frame = document.createElement('iframe');
-    frame.title = `Vista móvil de ${detailStore.name}`;
-    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    frame.referrerPolicy = 'no-referrer';
-    frame.src = pageUrl;
-    preview.append(frame);
-  }
+  note.textContent = '';
+  const src=screenshotUrl(pageUrl,mode)||(mode==='desktop'?((detailPage==='home'&&detailStore.image)||`https://image.thum.io/get/width/600/crop/900/noanimate/${pageUrl}`):null);
+  if(!src){note.textContent='La web no ha permitido obtener una captura móvil. Puedes visitarla con ↗.';return;}
+  const img=document.createElement('img');
+  img.alt=`${detailStore.name} · ${pageLabel(detailPage)} · ${mode==='mobile'?'Mobile':'Desktop'}`;
+  img.src=src;
+  img.onerror=()=>{img.remove();note.textContent='Captura no disponible. Puedes visitar la web con ↗.';};
+  preview.append(img);
 }
 for (const container of [grid, reviewList]) {
   container.addEventListener('click', event => {

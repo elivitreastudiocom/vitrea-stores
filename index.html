@@ -18,7 +18,7 @@
     <header class="site-header">
       <a class="logo" href="#top" aria-label="Vitrea, inicio">vitrea<span>.</span></a>
       <nav aria-label="Navegación principal">
-        <a href="#stores">Directorio</a>
+        <a href="#templates">Templates</a>
         <a href="#websites">Websites</a>
         <a href="#queue">En cola</a>
       </nav>
@@ -27,13 +27,13 @@
     <main id="top">
       <section class="hero"><h1>Vítrea Studio Gallery</h1></section>
 
-      <section class="directory" id="stores">
+      <section class="directory" id="templates">
         <div class="directory-head">
-          <div><h2>Directorio</h2></div>
+          <div><h2>Templates</h2></div>
           <p id="store-count" class="count">0 tiendas</p>
         </div>
-        <div class="directory-toolbar"><div id="filters" class="filters" aria-label="Tipos de web"></div><div id="page-filters" class="page-filters" role="group" aria-label="Tipo de página"></div><div class="detail-modes" role="group" aria-label="Vista del directorio"><button data-directory-mode="desktop" aria-pressed="true">Desktop</button><button data-directory-mode="mobile" aria-pressed="false">Mobile</button></div></div>
-        <label class="search directory-search"><span>⌕</span><input id="search" aria-label="Buscar en directorio" type="search" placeholder="Buscar web" /></label>
+        <div class="directory-toolbar"><div id="filters" class="filters" aria-label="Tipos de web"></div><div id="page-filters" class="page-filters" role="group" aria-label="Tipo de página"></div><div class="detail-modes" role="group" aria-label="Vista de Templates"><button data-directory-mode="desktop" aria-pressed="true">Desktop</button><button data-directory-mode="mobile" aria-pressed="false">Mobile</button></div></div>
+        <label class="search directory-search"><span>⌕</span><input id="search" aria-label="Buscar en Templates" type="search" placeholder="Buscar plantilla" /></label>
         <p id="directory-mobile-note" hidden>Si una vista móvil no carga, abre la web con ↗.</p>
         <div id="store-grid" class="store-grid" aria-live="polite"></div>
       </section>
@@ -66,15 +66,17 @@
           <div class="detail-modes" role="group" aria-label="Formato de vista"><button type="button" data-detail-mode="desktop" aria-pressed="true">Desktop</button><button type="button" data-detail-mode="mobile" aria-pressed="false">Mobile</button></div>
           <p id="detail-note" class="detail-note"></p><div id="detail-preview" class="detail-preview"></div>
         </section>
-        <aside class="detail-aside"><h3>Detalles</h3><p id="detail-description" hidden></p><dl id="detail-properties"></dl><a id="detail-source" target="_blank" rel="noopener" hidden>Propiedades documentadas en Land-book ↗</a><p id="detail-review-status"></p></aside>
+        <aside class="detail-aside"><h3>Detalles</h3><p id="detail-description" hidden></p><dl id="detail-properties"></dl><a id="detail-blog" target="_blank" rel="noopener" hidden>Blog ↗</a><a id="detail-source" target="_blank" rel="noopener" hidden>Propiedades documentadas en Land-book ↗</a><p id="detail-review-status"></p></aside>
       </div>
     </dialog>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="review-stores.js"></script>
+    <script src="catalog-data.js"></script>
+    <script src="captures.js"></script>
     <script src="app.js"></script>
     <script src="detail.js"></script>
     <script src="sync.js"></script>
-    <script src="queue.js?v=websites"></script>
+    <script src="queue.js?v=templates"></script>
     <script src="release.js"></script>
     <script src="live-updates.js"></script>
   </body>
