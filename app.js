@@ -8,9 +8,9 @@ let stores = [
  {name:'Nossara',url:'https://nossara.com/',category:'E-commerce',industry:'Textil y hogar'}
 ];
 let directoryMode = 'desktop';
-let selectedPageType = 'all';
+let selectedPageType = 'home';
 let pageLinks = {};
-const pageTypes = [['all','All'],['home','Home'],['about','About'],['catalog','Catalog'],['product','Product']];
+const pageTypes = [['home','Home'],['about','About'],['catalog','Catalog'],['product','Product']];
 function pageLabel(type) { return pageTypes.find(item=>item[0]===type)?.[1] || type; }
 function directoryEntries() {
  return stores.flatMap(store => ['home','about','catalog','product'].flatMap(type => {
@@ -20,7 +20,7 @@ function directoryEntries() {
 }
 let selectedCategory = 'Todas';
 
-function filteredDirectoryEntries(term = '') { return directoryEntries().filter(({store,type}) => (selectedCategory === 'Todas' || store.category === selectedCategory) && (selectedPageType === 'all' || type === selectedPageType) && `${store.name} ${store.country || ''} ${store.category} ${store.description || ''}`.toLowerCase().includes(term)); }
+function filteredDirectoryEntries(term = '') { return directoryEntries().filter(({store,type}) => (selectedCategory === 'Todas' || filterCategory(store) === selectedCategory) && (selectedPageType === 'all' || type === selectedPageType) && `${store.name} ${store.country || ''} ${store.category} ${store.description || ''}`.toLowerCase().includes(term)); }
 
 const grid = document.querySelector('#store-grid');
 const filters = document.querySelector('#filters');
@@ -51,7 +51,8 @@ function inclusionSwitch(store, person) {
 }
 let reviewDecisions = {};
 
-function categories() { return ['Todas', 'E-commerce', 'Agency', 'Portfolio', 'Exploration']; }
+function categories() { return ['Ecommerce', 'Portfolio', 'Blog', 'Others']; }
+function filterCategory(store) { const value=(store.category||'').toLowerCase().replace(/[- ]/g,''); return ({ecommerce:'Ecommerce',portfolio:'Portfolio',blog:'Blog'})[value] || 'Others'; }
 function escapeHtml(value = '') { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
 const previewSizer = new ResizeObserver(entries => entries.forEach(({target}) => { const frame=target.querySelector('iframe'); if(!frame)return; const width=directoryMode==='mobile'?390:1440; const scale=target.clientWidth/width; frame.style.width=width+'px';frame.style.height=(target.clientHeight/scale)+'px';frame.style.transform=`scale(${scale})`; }));
 function render() {
@@ -63,7 +64,7 @@ function render() {
   filters.innerHTML = categories().map(category => `<button class="filter ${category === selectedCategory ? 'active' : ''}" aria-pressed="${category===selectedCategory}" data-category="${escapeHtml(category)}">${category==='E-commerce'?'Ecommerce':escapeHtml(category)}</button>`).join('');
   document.querySelector('#page-filters').innerHTML = pageTypes.map(([value,label])=>`<button type="button" data-page-type="${value}" aria-pressed="${value===selectedPageType}">${label}</button>`).join('');
   grid.classList.toggle('directory-mobile', directoryMode === 'mobile');
-  grid.innerHTML = visible.length ? visible.map(({store,type,url}) => `<article class="store-card"><a href="${escapeHtml(url)}" data-store-url="${escapeHtml(store.url)}" data-page="${type}" aria-label="Ver ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot">${directoryMode === 'mobile' ? `<iframe src="${escapeHtml(url)}" title="Vista móvil de ${escapeHtml(store.name)} · ${pageLabel(type)}" loading="eager" sandbox="allow-scripts allow-same-origin" tabindex="-1"></iframe>` : `<img src="${escapeHtml((type==='home'&&store.image)||'https://image.thum.io/get/width/600/crop/900/noanimate/'+url)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)}" loading="lazy" />`}</div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${escapeHtml(store.category==='E-commerce'?'Ecommerce':store.category)} · ${pageLabel(type)}</p></div><a href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visitar ${escapeHtml(store.name)} · ${pageLabel(type)}">↗</a></div></article>`).join('') : `<p class="empty">${selectedPageType==='all'?'No hay webs con estos filtros.':'No hay páginas '+pageLabel(selectedPageType)+' guardadas con estos filtros.'}</p>`;
+  grid.innerHTML = visible.length ? visible.map(({store,type,url}) => `<article class="store-card"><a href="${escapeHtml(url)}" data-store-url="${escapeHtml(store.url)}" data-page="${type}" aria-label="Ver ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot">${directoryMode === 'mobile' ? `<iframe src="${escapeHtml(url)}" title="Vista móvil de ${escapeHtml(store.name)} · ${pageLabel(type)}" loading="eager" sandbox="allow-scripts allow-same-origin" tabindex="-1"></iframe>` : `<img src="${escapeHtml((type==='home'&&store.image)||'https://image.thum.io/get/width/600/crop/900/noanimate/'+url)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)}" loading="lazy" />`}</div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${escapeHtml(store.category==='E-commerce'?'Ecommerce':store.category)} · ${pageLabel(type)}</p></div><a class="card-visit" title="Visitar web" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visitar ${escapeHtml(store.name)} · ${pageLabel(type)}">↗</a></div></article>`).join('') : `<p class="empty">${selectedPageType==='all'?'No hay webs con estos filtros.':'No hay páginas '+pageLabel(selectedPageType)+' guardadas con estos filtros.'}</p>`;
   grid.querySelectorAll('.shot').forEach(shot=>previewSizer.observe(shot));
 }
 function loadStores() { render(); }
@@ -94,7 +95,7 @@ function renderReview() {
     const decisions = reviewDecisions[store.url] || {};
     const status = combinedStatus(store.url);
     const preview = `https://image.thum.io/get/width/600/crop/900/noanimate/${store.url}`;
-    return `<article class="review-card ${status}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver ficha ↗</span></a><div class="review-card-info"><div><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p><a class="review-visit" data-direct-visit href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Visitar web de ${escapeHtml(store.name)}">Visitar web ↗</a></div><div class="inclusion-controls">${inclusionSwitch(store, 'eli')}${inclusionSwitch(store, 'diego')}</div></div></article>`;
+    return `<article class="review-card ${status}"><a class="review-preview" href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(store.name)}"><img src="${escapeHtml(preview)}" alt="Vista previa de ${escapeHtml(store.name)}" loading="lazy" /><span>Ver ficha ↗</span></a><div class="review-card-info"><div><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener">${escapeHtml(store.name)}</a><p class="review-url">${escapeHtml(store.url.replace(/^https?:\/\//, ''))}</p><a class="card-visit" title="Visitar web" data-direct-visit href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-label="Visitar web de ${escapeHtml(store.name)}">↗</a></div><div class="inclusion-controls">${inclusionSwitch(store, 'eli')}${inclusionSwitch(store, 'diego')}</div></div></article>`;
   }).join('') : '<p class="review-empty">No hay referencias con este filtro.</p>';
   if (galleryMode === 'mobile') {
     reviewList.querySelectorAll('.review-preview').forEach(link => {
@@ -116,7 +117,7 @@ reviewList.addEventListener('click', event => {
   const { reviewer, reviewUrl: url } = button.dataset;
   sharedState.toggle(url, reviewer, button.dataset.reviewStatus);
 });
-filters.addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; render(); });
+filters.addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = selectedCategory === button.dataset.category ? 'Todas' : button.dataset.category; render(); });
 search.addEventListener('input', render);
 document.querySelector('#year').textContent = new Date().getFullYear();
 loadStores();
