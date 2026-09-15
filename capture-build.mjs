@@ -111,7 +111,14 @@ async function capture({url,mode}){
    window.scrollTo(0,0);
   });
   const height=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
-  const bytes=await page.screenshot({animations:'disabled',fullPage:!mobile,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5))},type:'jpeg',quality:85,timeout:15000});
+  let bytes;
+  try{
+   bytes=await page.screenshot({animations:'disabled',fullPage:!mobile,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5))},type:'jpeg',quality:85,timeout:15000});
+  }catch(error){
+   // Some long animated pages cannot produce a full-page capture reliably.
+   // Keep the same cleaned page and capture its real viewport as a fallback.
+   bytes=await page.screenshot({fullPage:false,type:'jpeg',quality:85,timeout:20000});
+  }
   await sharp(bytes).resize({width:mobile?390:600,withoutEnlargement:true}).jpeg({quality:82}).toFile(`${output}/${imagePath}`);
   (manifest[url]||={})[mode]=imagePath;
   console.log(`Captured ${mode} ${url}`);
