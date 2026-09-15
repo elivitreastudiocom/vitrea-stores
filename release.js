@@ -1,1 +1,1 @@
-window.VITREA_BUILD = "553a95f93578939a";
+window.VITREA_BUILD = "d1eb8b4d1e921068";

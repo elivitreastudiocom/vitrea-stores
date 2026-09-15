@@ -6,14 +6,13 @@ const knownProperties = {
 let detailStore;
 let detailMode = 'desktop';
 let detailPage = 'home';
-let pageLinks = {};
 function selectedPageUrl() { return detailPage === 'home' ? validWebsite(detailStore.url) : validWebsite((pageLinks[detailStore.url] || {})[detailPage]); }
 let detailOpener;
 let previousOverflow;
 function validWebsite(value) {
   try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch { return null; }
 }
-function openStoreDetail(store, opener) {
+function openStoreDetail(store, opener, initialPage='home', initialMode='desktop') {
   const url = validWebsite(store.url);
   if (!url) return;
   detailStore = store;
@@ -42,9 +41,9 @@ function openStoreDetail(store, opener) {
   detailDialog.showModal();
   updateDetailReviewStatus();
   detailDialog.scrollTop = 0;
-  detailPage = 'home';
-  detailDialog.querySelector('#detail-page').value = 'home';
-  showDetailMode('desktop');
+  detailPage = initialPage;
+  detailDialog.querySelector('#detail-page').value = initialPage;
+  showDetailMode(initialMode);
 }
 function showDetailMode(mode) {
   detailMode = mode;
@@ -86,10 +85,10 @@ for (const container of [grid, reviewList]) {
     if (link.hasAttribute('data-direct-visit')) return;
     // Keep the directory's explicit external arrow as a direct visit.
     if (link.closest('.card-info') && link.getAttribute('aria-hidden') === 'true') return;
-    const store = [...stores, ...reviewStores].find(item => validWebsite(item.url) === link.href);
+    const store = [...stores, ...reviewStores].find(item => validWebsite(item.url) === (link.dataset.storeUrl || link.href));
     if (!store) return;
     event.preventDefault();
-    openStoreDetail(store, link);
+    openStoreDetail(store, link, link.dataset.page || 'home', container===grid?directoryMode:'desktop');
   });
 }
 detailDialog.querySelector('#detail-close').addEventListener('click', () => detailDialog.close());

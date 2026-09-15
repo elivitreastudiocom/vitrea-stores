@@ -38,7 +38,8 @@ const sharedState = (() => {
     if (results.some(result=>result.error)) throw new Error('read');
     let changed=!state.ready;
     results[0].data.forEach(row=>{changed=applyReview(row)||changed;});
-    results[1].data.forEach(applyPage);
+    let pagesChanged=false;results[1].data.forEach(row=>{pagesChanged=applyPage(row)||pagesChanged;});
+    if(pagesChanged)render();
     state.ready=true;
     if(changed) redraw();
   }
@@ -62,7 +63,7 @@ const sharedState = (() => {
     try {
       const {data,error}=await client.from('vitrea_page_links').upsert({store_url:url,page_type:type,page_url:pageUrl},{onConflict:'store_url,page_type'}).select('store_url,page_type,page_url,revision').single();
       if(error) throw error;
-      applyPage(data);status('Enlace guardado · visible para todos.');return true;
+      applyPage(data);render();status('Enlace guardado · visible para todos.');return true;
     } catch {status('No se ha podido guardar el enlace.',true);return false;}
     finally {state.busy.delete(key);}
   }
@@ -93,6 +94,7 @@ const sharedState = (() => {
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'vitrea_page_links'},payload=>{
         if(!payload.new?.store_url || !applyPage(payload.new))return;
+        render();
         const editing=document.activeElement?.id==='page-link';
         if(!editing && detailDialog.open && detailStore?.url===payload.new.store_url && detailPage===payload.new.page_type)showDetailMode(detailMode);
       }).subscribe(async channelStatus=>{

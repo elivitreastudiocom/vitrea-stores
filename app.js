@@ -8,7 +8,19 @@ let stores = [
  {name:'Nossara',url:'https://nossara.com/',category:'E-commerce',industry:'Textil y hogar'}
 ];
 let directoryMode = 'desktop';
+let selectedPageType = 'all';
+let pageLinks = {};
+const pageTypes = [['all','All'],['home','Home'],['about','About'],['catalog','Catalog'],['product','Product']];
+function pageLabel(type) { return pageTypes.find(item=>item[0]===type)?.[1] || type; }
+function directoryEntries() {
+ return stores.flatMap(store => ['home','about','catalog','product'].flatMap(type => {
+  const url = type === 'home' ? store.url : (pageLinks[store.url] || {})[type];
+  return url ? [{store,type,url}] : [];
+ }));
+}
 let selectedCategory = 'Todas';
+
+function filteredDirectoryEntries(term = '') { return directoryEntries().filter(({store,type}) => (selectedCategory === 'Todas' || store.category === selectedCategory) && (selectedPageType === 'all' || type === selectedPageType) && `${store.name} ${store.country || ''} ${store.category} ${store.description || ''}`.toLowerCase().includes(term)); }
 
 const grid = document.querySelector('#store-grid');
 const filters = document.querySelector('#filters');
@@ -39,18 +51,19 @@ function inclusionSwitch(store, person) {
 }
 let reviewDecisions = {};
 
-function categories() { return ['Todas', 'E-commerce', 'Agency', 'Portfolio', 'Sports', 'Exploration']; }
+function categories() { return ['Todas', 'E-commerce', 'Agency', 'Portfolio', 'Exploration']; }
 function escapeHtml(value = '') { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
 const previewSizer = new ResizeObserver(entries => entries.forEach(({target}) => { const frame=target.querySelector('iframe'); if(!frame)return; const width=directoryMode==='mobile'?390:1440; const scale=target.clientWidth/width; frame.style.width=width+'px';frame.style.height=(target.clientHeight/scale)+'px';frame.style.transform=`scale(${scale})`; }));
 function render() {
   previewSizer.disconnect();
   document.querySelector('#directory-mobile-note').hidden=directoryMode!=='mobile';
   const term = search.value.trim().toLowerCase();
-  const visible = stores.filter(store => (selectedCategory === 'Todas' || store.category === selectedCategory) && `${store.name} ${store.country} ${store.category} ${store.description}`.toLowerCase().includes(term));
-  count.textContent = `${visible.length} webs`;
-  filters.innerHTML = categories().map(category => `<button class="filter ${category === selectedCategory ? 'active' : ''}" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join('');
+  const visible = filteredDirectoryEntries(term);
+  count.textContent = `${visible.length} ${visible.length===1?'página':'páginas'}`;
+  filters.innerHTML = categories().map(category => `<button class="filter ${category === selectedCategory ? 'active' : ''}" aria-pressed="${category===selectedCategory}" data-category="${escapeHtml(category)}">${category==='E-commerce'?'Ecommerce':escapeHtml(category)}</button>`).join('');
+  document.querySelector('#page-filters').innerHTML = pageTypes.map(([value,label])=>`<button type="button" data-page-type="${value}" aria-pressed="${value===selectedPageType}">${label}</button>`).join('');
   grid.classList.toggle('directory-mobile', directoryMode === 'mobile');
-  grid.innerHTML = visible.length ? visible.map(store => `<article class="store-card"><a href="${escapeHtml(store.url)}" aria-label="Ver ${escapeHtml(store.name)}"><div class="shot">${directoryMode === 'mobile' ? `<iframe src="${escapeHtml(store.url)}" title="Vista móvil de ${escapeHtml(store.name)}" loading="eager" sandbox="allow-scripts allow-same-origin" tabindex="-1"></iframe>` : `<img src="https://image.thum.io/get/width/600/crop/900/noanimate/${escapeHtml(store.url)}" alt="${escapeHtml(store.name)}" loading="lazy" />`}</div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${escapeHtml(store.category)}</p></div><a href="${escapeHtml(store.url)}" target="_blank" rel="noopener" aria-hidden="true">↗</a></div></article>`).join('') : '<p class="empty">No hay webs con este filtro.</p>';
+  grid.innerHTML = visible.length ? visible.map(({store,type,url}) => `<article class="store-card"><a href="${escapeHtml(url)}" data-store-url="${escapeHtml(store.url)}" data-page="${type}" aria-label="Ver ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot">${directoryMode === 'mobile' ? `<iframe src="${escapeHtml(url)}" title="Vista móvil de ${escapeHtml(store.name)} · ${pageLabel(type)}" loading="eager" sandbox="allow-scripts allow-same-origin" tabindex="-1"></iframe>` : `<img src="${escapeHtml((type==='home'&&store.image)||'https://image.thum.io/get/width/600/crop/900/noanimate/'+url)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)}" loading="lazy" />`}</div></a><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${escapeHtml(store.category==='E-commerce'?'Ecommerce':store.category)} · ${pageLabel(type)}</p></div><a href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visitar ${escapeHtml(store.name)} · ${pageLabel(type)}">↗</a></div></article>`).join('') : `<p class="empty">${selectedPageType==='all'?'No hay webs con estos filtros.':'No hay páginas '+pageLabel(selectedPageType)+' guardadas con estos filtros.'}</p>`;
   grid.querySelectorAll('.shot').forEach(shot=>previewSizer.observe(shot));
 }
 function loadStores() { render(); }
@@ -113,3 +126,5 @@ document.querySelector('#review-categories').addEventListener('click', event => 
 document.querySelectorAll('[data-gallery-mode]').forEach(button => button.addEventListener('click', () => { galleryMode = button.dataset.galleryMode; document.querySelectorAll('[data-gallery-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button))); document.querySelector('#gallery-note').hidden = galleryMode !== 'mobile'; renderReview(); }));
 
 document.querySelectorAll('[data-directory-mode]').forEach(button => button.addEventListener('click', () => {directoryMode=button.dataset.directoryMode;document.querySelectorAll('[data-directory-mode]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));render();}));
+
+document.querySelector('#page-filters').addEventListener('click', event => {const button=event.target.closest('[data-page-type]');if(!button)return;selectedPageType=button.dataset.pageType;render();document.querySelector(`[data-page-type="${selectedPageType}"]`).focus({preventScroll:true});});
