@@ -28,7 +28,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion=new URL(url).hostname==='skallstudio.com'?'clean-overlays-v5':/^(www\.)?(skallstudio\.com|louloudesaison\.com|chantelle\.com|driesvannoten\.com|siha\.com\.au|area51store\.co\.nz|balmoralrunning\.com|snellingstudio\.com|susannekaufmann\.com|lesseofficial\.com)$/.test(new URL(url).hostname)?'clean-overlays-v4':'clean-overlays-v3';
+ const captureVersion=/^(www\.)?(louloudesaison\.com|apinistudio\.com|watchhouse\.com)$/.test(new URL(url).hostname)?'component-overlays-v6':new URL(url).hostname==='skallstudio.com'?'clean-overlays-v5':/^(www\.)?(skallstudio\.com|louloudesaison\.com|chantelle\.com|driesvannoten\.com|siha\.com\.au|area51store\.co\.nz|balmoralrunning\.com|snellingstudio\.com|susannekaufmann\.com|lesseofficial\.com)$/.test(new URL(url).hostname)?'clean-overlays-v4':'clean-overlays-v3';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -66,9 +66,11 @@ async function capture({url,mode}){
   // Dismiss only marketing/consent UI in this disposable screenshot session.
   // Keep access checks, age gates and the actual page content intact.
   await page.waitForTimeout(2000);
+  // Persistent selectors also cover display:contents hosts and late popup insertion.
+  await page.addStyleTag({content:`newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
   await page.evaluate(()=>{
    const cleanOverlays=()=>{
-   const providers=['.klaviyo-form-overlay','#usercentrics-root','#usercentrics-cmp-ui',
+   const providers=['newsletter-popup','.shopify-section--popup','#pandectes-banner','#pandectes-container','.klaviyo-form-overlay','#usercentrics-root','#usercentrics-cmp-ui',
     '[data-testid="POPUP"]','#onetrust-banner-sdk','#onetrust-consent-sdk',
     '#CybotCookiebotDialog','#CybotCookiebotDialogBodyUnderlay','.cky-consent-container',
     '.cky-overlay','.shopify-pc__banner','.shopify-pc__prefs__dialog',
@@ -82,7 +84,7 @@ async function capture({url,mode}){
    // Identify large fixed overlays by their purpose, not just their position.
    for(const el of document.querySelectorAll('[role="dialog"],dialog,[aria-modal="true"],body *')){
     const rect=el.getBoundingClientRect();
-    if(!rect.width||!rect.height||/^(HEADER|NAV|MAIN)$/.test(el.tagName))continue;
+    if(/^(HEADER|NAV|MAIN)$/.test(el.tagName))continue;
     const style=getComputedStyle(el);
     const modal=el.matches('[role="dialog"],dialog[open],[aria-modal="true"]');
     if(!modal&&!(style.position==='fixed'&&rect.height>100&&rect.width>200))continue;
@@ -103,22 +105,20 @@ async function capture({url,mode}){
    });
    };
    cleanOverlays();
-   // Some providers appear when screenshot animations finish; keep cleaning until capture.
-   let scheduled=false;
-   new MutationObserver(()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;cleanOverlays();});}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','open']});
+   // No perpetual style observer: animated storefronts otherwise keep invalidating rendering.
    document.documentElement.style.setProperty('overflow','auto','important');
    document.body.style.setProperty('overflow','auto','important');
    window.scrollTo(0,0);
   });
   const height=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
-  let bytes;
-  try{
-   bytes=await page.screenshot({animations:'disabled',fullPage:!mobile,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5))},type:'jpeg',quality:85,timeout:15000});
-  }catch(error){
-   // Some long animated pages cannot produce a full-page capture reliably.
-   // Keep the same cleaned page and capture its real viewport as a fallback.
-   bytes=await page.screenshot({fullPage:false,type:'jpeg',quality:85,timeout:20000});
-  }
+  // Capture the rendered surface directly without resizing the layout viewport.
+  const session=await context.newCDPSession(page);
+  const shot=await Promise.race([
+   session.send('Page.captureScreenshot',{format:'jpeg',quality:85,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5)),scale:1}}),
+   new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),20000))
+  ]);
+  const bytes=Buffer.from(shot.data,'base64');
+  await session.detach();
   await sharp(bytes).resize({width:mobile?390:600,withoutEnlargement:true}).jpeg({quality:82}).toFile(`${output}/${imagePath}`);
   (manifest[url]||={})[mode]=imagePath;
   console.log(`Captured ${mode} ${url}`);

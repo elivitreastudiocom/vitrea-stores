@@ -1,7 +1,7 @@
 // Store details use existing records; unverified design attributes stay explicit.
 const detailDialog = document.querySelector('#store-detail');
 const knownProperties = {
-  'www.lyleandscott.com': { industry: 'Moda', style: 'Animación · Vídeo de fondo · Tarjetas', typography: 'Sans serif', platform: 'Shopify', product: 'Producto físico', source: 'https://land-book.com/websites/98079-lyle-and-scottTM-official-site-premium-british-menswear' }
+  'www.lyleandscott.com': { industry: 'Fashion', style: 'Animation · Background video · Cards', typography: 'Sans serif', platform: 'Shopify', product: 'Physical product', source: 'https://land-book.com/websites/98079-lyle-and-scottTM-official-site-premium-british-menswear' }
 };
 let detailStore;
 let detailMode = 'desktop';
@@ -23,12 +23,12 @@ function openStoreDetail(store, opener, initialPage='home', initialMode='desktop
   detailDialog.querySelector('#detail-domain').textContent = new URL(url).hostname.replace(/^www\./, '');
   detailDialog.querySelector('#detail-visit').href = url;
   const rows = [
-    ['Categoría', filterCategory(store)],
-    ['Sector', details.industry], ['Estilo', details.style],
-    ['Tipografía', details.typography], ['Plataforma', details.platform],
-    ['Producto', details.product], ['Colección', isReview ? 'Websites' : 'Templates']
+    ['Category', filterCategory(store)],
+    ['Industry', details.industry], ['Style', details.style],
+    ['Typography', details.typography], ['Platform', details.platform],
+    ['Product', details.product], ['Collection', isReview ? 'Websites' : 'Templates']
   ];
-  detailDialog.querySelector('#detail-properties').innerHTML = rows.filter(([,value])=>value).map(([label, value]) => `<div><dt>${label}</dt><dd class="${value ? '' : 'undocumented'}">${escapeHtml(value || 'Por documentar')}</dd></div>`).join('');
+  detailDialog.querySelector('#detail-properties').innerHTML = rows.filter(([,value])=>value).map(([label, value]) => `<div><dt>${label}</dt><dd class="${value ? '' : 'undocumented'}">${escapeHtml(value || 'Not documented')}</dd></div>`).join('');
   const description = detailDialog.querySelector('#detail-description');
   description.textContent = store.description || '';
   description.hidden = !store.description;
@@ -58,14 +58,14 @@ function showDetailMode(mode) {
   detailDialog.querySelectorAll('[data-detail-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.detailMode === mode)));
   preview.replaceChildren();
   preview.className = `detail-preview ${mode}`;
-  if (!pageUrl) { note.textContent = 'Añade el enlace real de esta página para ver su versión de escritorio o móvil.'; return; }
+  if (!pageUrl) { note.textContent = 'Add this page’s URL to view its desktop or mobile preview.'; return; }
   note.textContent = '';
-  const src=screenshotUrl(pageUrl,mode)||(mode==='desktop'?((detailPage==='home'&&detailStore.image)||`https://image.thum.io/get/width/600/crop/900/noanimate/${pageUrl}`):null);
-  if(!src){note.textContent='La web no ha permitido obtener una captura móvil. Puedes visitarla con ↗.';return;}
+  const src=screenshotUrl(pageUrl,mode);
+  if(!src){note.textContent='Preview unavailable. Visit the website with ↗.';return;}
   const img=document.createElement('img');
   img.alt=`${detailStore.name} · ${pageLabel(detailPage)} · ${mode==='mobile'?'Mobile':'Desktop'}`;
   img.src=src;
-  img.onerror=()=>{img.remove();note.textContent='Captura no disponible. Puedes visitar la web con ↗.';};
+  img.onerror=()=>{img.remove();note.textContent='Preview unavailable. Visit the website with ↗.';};
   preview.append(img);
 }
 for (const container of [grid]) {
@@ -94,14 +94,14 @@ detailDialog.querySelector('#page-link-form').addEventListener('submit', async e
   event.preventDefault();
   const input = detailDialog.querySelector('#page-link');
   const url = validWebsite(input.value);
-  if (!url) { input.setCustomValidity('Introduce un enlace http o https válido.'); input.reportValidity(); return; }
+  if (!url) { input.setCustomValidity('Enter a valid HTTP or HTTPS URL.'); input.reportValidity(); return; }
   input.setCustomValidity('');
   const button = event.currentTarget.querySelector('button'); button.disabled = true;
   const storeUrl = detailStore.url; const type = detailPage;
   try {
     const saved = await sharedState.savePage(storeUrl, type, url);
     if (saved && detailDialog.open && detailStore.url === storeUrl && detailPage === type) showDetailMode(detailMode);
-    if (!saved) input.setCustomValidity('No se ha guardado. Comprueba la conexión y vuelve a intentarlo.');
+    if (!saved) input.setCustomValidity('Not saved. Check your connection and try again.');
     input.reportValidity();
   } finally { button.disabled = false; }
 });

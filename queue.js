@@ -30,14 +30,14 @@
     return url.href;
   }
   function render(){
-    document.querySelector('#queue-count').textContent=ready?`${rows.length} pendientes`:'';
+    document.querySelector('#queue-count').textContent=ready?`${rows.length} pending`:'';
     list.replaceChildren();
-    if(!rows.length){const empty=document.createElement('p');empty.className='queue-empty';empty.textContent=ready?'No hay webs en cola.':'';list.append(empty);return;}
+    if(!rows.length){const empty=document.createElement('p');empty.className='queue-empty';empty.textContent=ready?'No websites in the queue.':'';list.append(empty);return;}
     for(const row of rows){
       const item=document.createElement('article');item.className='queue-row';
       const info=document.createElement('div');const link=document.createElement('a');link.href=row.url;link.target='_blank';link.rel='noopener';link.textContent=new URL(row.url).hostname.replace(/^www\./,'')+' ↗';
       const path=document.createElement('p');path.textContent=row.url;info.append(link,path);
-      const date=document.createElement('time');date.dateTime=row.created_at;date.textContent=new Date(row.created_at).toLocaleDateString('es-ES',{day:'numeric',month:'short'});item.append(info,date);list.append(item);
+      const date=document.createElement('time');date.dateTime=row.created_at;date.textContent=new Date(row.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});item.append(info,date);list.append(item);
     }
   }
   async function refresh(){
@@ -47,26 +47,26 @@
       const {data,error}=await supabaseClient.from('vitrea_queue').select('url,created_at,status').eq('status','pending').order('created_at',{ascending:false});
       if(error)throw error;
       rows=data;ready=true;render();
-      if(!saving&&!input.value.trim())status('Sincronizado');
-    }catch{status('No se ha podido cargar la cola. Reintentando…',true);}
+      if(!saving&&!input.value.trim())status('Synced');
+    }catch{status('Could not load the queue. Retrying…',true);}
     finally{loading=false;}
   }
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(saving)return;
     let url;
-    try{url=normalize(input.value);}catch{status('Introduce un enlace web válido.',true);input.focus();return;}
-    if(stores.some(store=>normalize(store.url)===url)){status('Esta web ya está en el Directorio.');return;}
-    if(approvedWebsites().some(store=>normalize(store.url)===url)){status('Esta web ya está en Websites.');return;}
-    saving=true;button.disabled=true;sharedState.busy.add('queue');status('Guardando…');
+    try{url=normalize(input.value);}catch{status('Enter a valid website URL.',true);input.focus();return;}
+    if(stores.some(store=>normalize(store.url)===url)){status('This website is already in Templates.');return;}
+    if(approvedWebsites().some(store=>normalize(store.url)===url)){status('This website is already in Websites.');return;}
+    saving=true;button.disabled=true;sharedState.busy.add('queue');status('Saving…');
     try{
       const {error}=await supabaseClient.from('vitrea_queue').insert({url});
-      if(error){if(error.code==='23505'){status('Esta web ya se ha añadido.');return;}throw error;}
+      if(error){if(error.code==='23505'){status('This website has already been added.');return;}throw error;}
       if(input.value.trim() && normalize(input.value)===url)input.value='';
-      await refresh();status('Añadida a la cola.');
-    }catch{status('No se ha guardado. Comprueba la conexión e inténtalo de nuevo.',true);}
+      await refresh();status('Added to the queue.');
+    }catch{status('Not saved. Check your connection and try again.',true);}
     finally{saving=false;button.disabled=false;sharedState.busy.delete('queue');}
   });
-  if(!supabaseClient){status('No se ha podido conectar.',true);return;}
+  if(!supabaseClient){status('Could not connect.',true);return;}
   supabaseClient.channel('vitrea-queue').on('postgres_changes',{event:'*',schema:'public',table:'vitrea_queue'},refresh).subscribe(state=>{if(state==='SUBSCRIBED')refresh();});
   refresh();setInterval(()=>{if(!document.hidden)refresh();},10000);
   window.addEventListener('online',refresh);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});

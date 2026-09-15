@@ -55,22 +55,44 @@ footer .logo img{width:145px}
 }
 @media(prefers-reduced-motion:reduce){.shot{transition:none}}
 
-/* A single visual language for category, page and device switches. */
+/* Header identity and independent filter groups. */
 .site-header .logo{gap:8px;align-items:baseline}
 body .brand-gallery{font-family:var(--serif)!important;font-size:var(--title-size)!important;font-weight:400;line-height:1}
 .site-header .logo img{width:194px}
 #templates>.directory-head{justify-content:flex-end;margin-bottom:24px}
-.directory-search{margin:24px 0 16px}
-#templates .directory-search{margin-top:0}
-.directory-toolbar{padding:8px;background:#efeeed;border:1px solid var(--line);border-radius:10px;margin:0 0 24px;gap:16px}
-.directory-toolbar>.filters,.directory-toolbar>.page-filters,.directory-toolbar>.detail-modes{padding:0;background:none;border:0;border-radius:0;gap:4px;display:flex;flex-wrap:wrap;align-items:center}
-.directory-toolbar button,.directory-toolbar>.filters .filter{border:0;border-radius:6px;background:transparent;color:var(--ink);padding:8px 12px;box-shadow:none;min-height:36px;line-height:1.4}
-.directory-toolbar button[aria-pressed=true],.directory-toolbar>.filters .filter.active{background:var(--ink);color:#fff}
-.directory-toolbar button:hover:not([aria-pressed=true]){background:#e1dfde}
-.directory-toolbar button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-@media(max-width:700px){
- .site-header .logo img{width:160px}
- .directory-toolbar{display:flex;flex-wrap:wrap;gap:12px}
- .directory-toolbar>.filters,.directory-toolbar>.page-filters{justify-content:flex-start;flex-basis:100%}
- .directory-toolbar>.detail-modes{margin-left:auto}
+.directory-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}
+.directory-toolbar>.filters,.directory-toolbar>.page-filters,.directory-toolbar>.detail-modes{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;padding:0;margin:0;background:none;border:0;border-radius:0;min-width:0;grid-column:auto;grid-row:auto}
+.directory-toolbar>.page-filters{justify-content:center}
+.directory-toolbar>.detail-modes{justify-content:flex-end}
+.directory-toolbar button:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+@media(max-width:1100px){
+ .directory-toolbar{grid-template-columns:minmax(0,1fr) auto}
+ .directory-toolbar>.filters{grid-column:1/-1;grid-row:1}
+ .directory-toolbar>.page-filters{grid-column:1;grid-row:2;justify-content:flex-start}
+ .directory-toolbar>.detail-modes{grid-column:2;grid-row:2}
 }
+@media(max-width:600px){
+ .site-header .logo img{width:160px}
+ .directory-toolbar{grid-template-columns:minmax(0,1fr)}
+ .directory-toolbar>.filters,.directory-toolbar>.page-filters,.directory-toolbar>.detail-modes{grid-column:1;grid-row:auto;justify-content:flex-start;align-self:start;gap:4px 20px}
+}
+
+/* Studio projects: white canvas, serif titles and quiet outlined controls. */
+:root{--paper:#fff;--soft:#f7f7f5;--line:#e7e5e5;--muted:#787674}
+.site-header{border-bottom:0;height:80px;min-height:80px}
+.site-header nav{gap:32px}
+.site-header nav a{text-transform:uppercase;text-decoration:none}
+.site-header nav a[aria-current=page]{text-underline-offset:5px}
+.directory,.development{padding-top:24px}
+.development-head{justify-content:flex-end;margin-bottom:24px}
+.directory-search{margin:0 0 24px;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0}
+.directory-toolbar{border:0;border-radius:0;background:transparent;padding:0;margin-bottom:32px;gap:24px}
+.directory-toolbar button,.directory-toolbar>.filters .filter{background:transparent;border:0;border-bottom:1px solid transparent;border-radius:0;color:var(--muted);padding:8px 0;text-transform:uppercase}
+.directory-toolbar button[aria-pressed=true],.directory-toolbar>.filters .filter.active{background:transparent;color:var(--ink);border-bottom-color:var(--ink)}
+.directory-toolbar button:hover:not([aria-pressed=true]){background:transparent;color:var(--ink)}
+body .card-info h3{font-family:var(--serif)!important;font-size:var(--title-size)!important;font-weight:400;line-height:1.12}
+.card-info p{text-transform:uppercase;color:var(--muted);margin-top:8px}
+.store-grid,.review-list{row-gap:48px}
+.shot{border-radius:4px}
+.websites-sync[hidden]{display:none!important}
+@media(max-width:700px){.site-header{height:auto}.site-header nav{gap:24px}.directory-toolbar{gap:12px}.store-grid,.review-list{row-gap:32px}}

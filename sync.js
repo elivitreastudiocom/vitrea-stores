@@ -5,7 +5,7 @@ const sharedState = (() => {
   const reviewVersions = new Map();
   const pageVersions = new Map();
   const message = document.querySelector('#sync-message');
-  function status(text,error=false) {message.textContent=text;message.classList.toggle('sync-error',error);}
+  function status(text,error=false) {message.textContent=text;message.hidden=!error;message.classList.toggle('sync-error',error);}
   function redraw() {
     const focused = document.activeElement?.dataset;
     const restore = focused?.reviewUrl ? {url:focused.reviewUrl,reviewer:focused.reviewer,selection:focused.reviewStatus} : null;
@@ -41,25 +41,25 @@ const sharedState = (() => {
     if(changed) redraw();
   }
   async function savePage(url,type,pageUrl) {
-    if(!state.ready) {status('Sin conexión: el enlace no se ha guardado.',true);return false;}
+    if(!state.ready) {status('Offline. The link was not saved.',true);return false;}
     const key='page|'+url+'|'+type;
     state.busy.add(key);
     try {
       const {data,error}=await client.from('vitrea_page_links').upsert({store_url:url,page_type:type,page_url:pageUrl},{onConflict:'store_url,page_type'}).select('store_url,page_type,page_url,revision').single();
       if(error) throw error;
-      applyPage(data);render();renderReview();status('Enlace guardado · visible para todos.');return true;
-    } catch {status('No se ha podido guardar el enlace.',true);return false;}
+      applyPage(data);render();renderReview();status('Link saved. Visible to everyone.');return true;
+    } catch {status('Could not save the link.',true);return false;}
     finally {state.busy.delete(key);}
   }
   async function refresh() {
     if(document.hidden || state.refresh || !client) return;
-    state.refresh=snapshot().then(()=>{if(!state.busy.size)status('Sincronizado');}).catch(()=>status('Sin conexión. Los datos visibles pueden estar desactualizados.',true)).finally(()=>{state.refresh=null;});
+    state.refresh=snapshot().then(()=>{if(!state.busy.size)status('Synced');}).catch(()=>status('Offline. The displayed data may be out of date.',true)).finally(()=>{state.refresh=null;});
     await state.refresh;
   }
   async function connect() {
-    if(!client){status('No se ha podido conectar. Recarga la página.',true);return;}
-    try {await snapshot();status('Sincronizado');}
-    catch {status('No se han podido cargar las selecciones. Reintentando…',true);}
+    if(!client){status('Could not connect. Reload the page.',true);return;}
+    try {await snapshot();status('Synced');}
+    catch {status('Could not load the selection. Retrying…',true);}
     client.channel('vitrea-public-workspace')
       .on('postgres_changes',{event:'*',schema:'public',table:'vitrea_reviews'},payload=>{
         if(payload.new?.store_url && applyReview(payload.new))redraw();
@@ -71,9 +71,9 @@ const sharedState = (() => {
         if(!editing && detailDialog.open && detailStore?.url===payload.new.store_url && detailPage===payload.new.page_type)showDetailMode(detailMode);
       }).subscribe(async channelStatus=>{
         if(channelStatus==='SUBSCRIBED'){
-          try {await snapshot();if(!state.busy.size)status('Sincronizado');}
-          catch {status('No se han podido actualizar las selecciones.',true);}
-        } else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channelStatus))status('Reconectando · los cambios se comprobarán automáticamente.',true);
+          try {await snapshot();if(!state.busy.size)status('Synced');}
+          catch {status('Could not update the selection.',true);}
+        } else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channelStatus))status('Reconnecting. Changes will sync automatically.',true);
       });
   }
   setTimeout(connect,0);
