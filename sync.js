@@ -67,8 +67,6 @@ const sharedState = (() => {
       .on('postgres_changes',{event:'*',schema:'public',table:'vitrea_page_links'},payload=>{
         if(!payload.new?.store_url || !applyPage(payload.new))return;
         render();renderReview();
-        const editing=document.activeElement?.id==='page-link';
-        if(!editing && detailDialog.open && detailStore?.url===payload.new.store_url && detailPage===payload.new.page_type)showDetailMode(detailMode);
       }).subscribe(async channelStatus=>{
         if(channelStatus==='SUBSCRIBED'){
           try {await snapshot();if(!state.busy.size)status('Synced');}

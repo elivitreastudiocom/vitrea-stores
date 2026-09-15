@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A curated collection of websites and templates." />
+    <meta name="description" content="A curated collection of ecommerce websites." />
     <title>Vítrea Studio Gallery</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="development.css" />
@@ -19,7 +19,6 @@
     <header class="site-header">
       <a class="logo" href="#top" aria-label="Vítrea Studio Gallery, home"><img src="vitrea-logo.png" alt="Vítrea Studio" width="194" height="28" /><span class="brand-gallery">Gallery</span></a>
       <nav aria-label="Main navigation">
-        <a href="#templates">Templates</a>
         <a href="#websites">Websites</a>
         <a href="#queue">Queue</a>
       </nav>
@@ -27,21 +26,11 @@
 
     <main id="top">
 
-      <section class="directory" id="templates" aria-label="Templates">
-        <div class="directory-head">
-          <p id="store-count" class="count">0 templates</p>
-        </div>
-        <label class="search directory-search"><span>⌕</span><input id="search" aria-label="Search Templates" type="search" placeholder="Search templates" /></label>
-        <div class="directory-toolbar"><div id="filters" class="filters" aria-label="Website category"></div><div id="page-filters" class="page-filters" role="group" aria-label="Page type"></div><div class="detail-modes" role="group" aria-label="Templates view"><button data-directory-mode="desktop" aria-pressed="true">Desktop</button><button data-directory-mode="mobile" aria-pressed="false">Mobile</button></div></div>
-        <p id="directory-mobile-note" hidden>If a mobile preview is unavailable, visit the website with ↗.</p>
-        <div id="store-grid" class="store-grid" aria-live="polite"></div>
-      </section>
-
-      <section class="development" id="websites" hidden>
+      <section class="development" id="websites">
         <div class="development-head"><p id="review-count" class="count"></p></div>
         <p id="sync-message" class="websites-sync" role="status" hidden>Connecting…</p>
         <label class="search directory-search"><span>⌕</span><input id="review-search" type="search" aria-label="Search Websites" placeholder="Search websites" /></label>
-        <div class="directory-toolbar"><div id="websites-filters" class="filters" aria-label="Website category"></div><div id="websites-page-filters" class="page-filters" role="group" aria-label="Page type"></div><div class="detail-modes" role="group" aria-label="Websites view"><button data-gallery-mode="desktop" aria-pressed="true">Desktop</button><button data-gallery-mode="mobile" aria-pressed="false">Mobile</button></div></div>
+        <div class="directory-toolbar"><div id="websites-page-filters" class="page-filters" role="group" aria-label="Page type"></div><div class="detail-modes" role="group" aria-label="Websites view"><button data-gallery-mode="desktop" aria-pressed="true">Desktop</button><button data-gallery-mode="mobile" aria-pressed="false">Mobile</button></div></div>
         <p id="websites-mobile-note" hidden>If a mobile preview is unavailable, visit the website with ↗.</p>
         <div id="review-list" class="review-list" aria-live="polite"></div>
       </section>
@@ -55,25 +44,11 @@
 
     <footer><a class="logo" href="#top"><img src="vitrea-logo.png" alt="Vítrea Studio" width="194" height="28" /></a><p>© <span id="year"></span></p></footer>
 
-    <dialog id="store-detail" class="store-detail" aria-labelledby="detail-title">
-      <div class="detail-topbar"><span class="logo"><img src="vitrea-logo.png" alt="Vítrea Studio" width="194" height="28" /></span><button id="detail-close" type="button" autofocus>Close ×</button></div>
-      <div class="detail-heading"><div><h2 id="detail-title"></h2><p id="detail-domain"></p></div><a id="detail-visit" class="detail-visit" target="_blank" rel="noopener">Visit website ↗</a></div>
-      <div class="detail-layout">
-        <section class="detail-viewer" aria-label="Website views">
-          <label class="page-selector">Page <select id="detail-page"><option value="home">Home</option><option value="about">About</option><option value="catalog">Catalog</option><option value="product">Product</option></select></label>
-          <form id="page-link-form" hidden><label>Page URL<input id="page-link" type="url" placeholder="https://tienda.com/…" required /></label><button>Save link</button></form>
-          <div class="detail-modes" role="group" aria-label="Device"><button type="button" data-detail-mode="desktop" aria-pressed="true">Desktop</button><button type="button" data-detail-mode="mobile" aria-pressed="false">Mobile</button></div>
-          <p id="detail-note" class="detail-note"></p><div id="detail-preview" class="detail-preview"></div>
-        </section>
-        <aside class="detail-aside"><h3>Details</h3><p id="detail-description" hidden></p><dl id="detail-properties"></dl><a id="detail-blog" target="_blank" rel="noopener" hidden>Blog ↗</a><a id="detail-source" target="_blank" rel="noopener" hidden>Details on Land-book ↗</a><p id="detail-review-status"></p></aside>
-      </div>
-    </dialog>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="review-stores.js"></script>
     <script src="catalog-data.js"></script>
     <script src="captures.js"></script>
     <script src="app.js?v=studio4"></script>
-    <script src="detail.js?v=studio4"></script>
     <script src="sync.js"></script>
     <script src="queue.js?v=studio4"></script>
     <script src="release.js"></script>

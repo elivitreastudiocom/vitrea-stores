@@ -1,10 +1,10 @@
 // Shared inbox. Processing into the gallery is a separate editorial action.
 (() => {
-  const sections = ['templates','websites','queue'];
+  const sections = ['websites','queue'];
   function showSection() {
-    if(location.hash==='#stores')history.replaceState(null,'','#templates');
+    if(['#stores','#templates'].includes(location.hash))history.replaceState(null,'','#websites');
     if(location.hash==='#development')history.replaceState(null,'','#websites');
-    const selected = sections.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'templates';
+    const selected = sections.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'websites';
     sections.forEach(id => {document.getElementById(id).hidden = id !== selected;});
     document.querySelectorAll('.site-header nav a').forEach(link => {
       if (link.hash === '#' + selected) link.setAttribute('aria-current','page');
@@ -55,7 +55,6 @@
     event.preventDefault();if(saving)return;
     let url;
     try{url=normalize(input.value);}catch{status('Enter a valid website URL.',true);input.focus();return;}
-    if(stores.some(store=>normalize(store.url)===url)){status('This website is already in Templates.');return;}
     if(approvedWebsites().some(store=>normalize(store.url)===url)){status('This website is already in Websites.');return;}
     saving=true;button.disabled=true;sharedState.busy.add('queue');status('Saving…');
     try{

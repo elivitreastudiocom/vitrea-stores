@@ -28,7 +28,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion=new URL(url).hostname==='siha.com.au'?'siha-promotion-v10':/^(www\.)?driesvannoten\.com$/.test(new URL(url).hostname)?'dries-newsletter-v9':/^(www\.)?driesvannoten\.com$/.test(new URL(url).hostname)?'persistent-consent-v8':/^(www\.)?(susannekaufmann\.com|calibre\.com\.au|gasbijoux\.com|driesvannoten\.com)$/.test(new URL(url).hostname)?'shadow-consent-v7':/^(www\.)?(louloudesaison\.com|apinistudio\.com|watchhouse\.com)$/.test(new URL(url).hostname)?'component-overlays-v6':new URL(url).hostname==='skallstudio.com'?'clean-overlays-v5':/^(www\.)?(skallstudio\.com|louloudesaison\.com|chantelle\.com|driesvannoten\.com|siha\.com\.au|area51store\.co\.nz|balmoralrunning\.com|snellingstudio\.com|susannekaufmann\.com|lesseofficial\.com)$/.test(new URL(url).hostname)?'clean-overlays-v4':'clean-overlays-v3';
+ const captureVersion='gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -44,7 +44,7 @@ async function capture({url,mode}){
  const browser=await playwright.launch({args:chromium.args.filter(arg=>!['--single-process','--disable-web-security','--disable-site-isolation-trials','--allow-running-insecure-content'].includes(arg)),executablePath,headless:true});
  const mobile=mode==='mobile';
  const width=mobile?390:1440;
- const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:1,locale:'en-GB',colorScheme:'light',serviceWorkers:'block'});
+ const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:mobile?2:1,locale:'en-GB',colorScheme:'light',serviceWorkers:'block'});
  try{
   const page=await context.newPage();
   const response=await page.goto(url,{waitUntil:'commit',timeout:45000});
@@ -66,7 +66,14 @@ async function capture({url,mode}){
   await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2000))]));
   // Dismiss only marketing/consent UI in this disposable screenshot session.
   // Keep access checks, age gates and the actual page content intact.
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1200);
+  // Decode the images in the photographed area, including lazy-loaded catalog rows.
+  await page.evaluate(async()=>{
+   const limit=Math.round(innerWidth*1.5);
+   const images=[...document.images].filter(img=>{const r=img.getBoundingClientRect();return r.top<limit&&r.bottom>0;});
+   images.forEach(img=>{img.loading='eager';img.decoding='sync';});
+   await Promise.race([Promise.all(images.map(img=>img.decode().catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,8000))]);
+  });
   // Persistent selectors also cover display:contents hosts and late popup insertion.
   await page.addStyleTag({content:` #global-popup-global-popup, .nl-popup, #onetrust-consent-sdk, #onetrust-banner-sdk, pandectes-cmp, .needsclick[role="dialog"], newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
   await page.evaluate(()=>{
@@ -124,18 +131,18 @@ async function capture({url,mode}){
   // Capture the rendered surface directly without resizing the layout viewport.
   const session=await context.newCDPSession(page);
   const shot=await Promise.race([
-   session.send('Page.captureScreenshot',{format:'jpeg',quality:85,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5)),scale:1}}),
+   session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5)),scale:1}}),
    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
-  ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:85,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
+  ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
   const bytes=Buffer.from(shot.data,'base64');
   await session.detach();
-  await sharp(bytes).resize({width:mobile?390:600,withoutEnlargement:true}).jpeg({quality:82}).toFile(`${output}/${imagePath}`);
+  await sharp(bytes).resize({width:mobile?780:1200,withoutEnlargement:true}).jpeg({quality:92,chromaSubsampling:'4:4:4'}).toFile(`${output}/${imagePath}`);
   (manifest[url]||={})[mode]=imagePath;
   console.log(`Captured ${mode} ${url}`);
  }catch(error){console.warn(`Unavailable ${mode} ${url}: ${error.message}`);}
  finally{await browser.close().catch(()=>{});}
 }
-const pending=[...jobs];
+const pending=[...jobs].sort((a,b)=>Number(b.url==='https://fume-studio.com/collections/all')-Number(a.url==='https://fume-studio.com/collections/all'));
 await Promise.all(Array.from({length:2},async()=>{while(pending.length)await capture(pending.shift());}));
 await fs.writeFile(`${output}/captures.js`,`window.galleryCaptures = ${JSON.stringify(manifest)};\n`);
 const successful=Object.values(manifest).reduce((n,modes)=>n+Object.keys(modes).length,0);
