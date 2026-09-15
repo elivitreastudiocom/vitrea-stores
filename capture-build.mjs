@@ -28,7 +28,7 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion=/^(www\.)?(susannekaufmann\.com|calibre\.com\.au|gasbijoux\.com|driesvannoten\.com)$/.test(new URL(url).hostname)?'shadow-consent-v7':/^(www\.)?(louloudesaison\.com|apinistudio\.com|watchhouse\.com)$/.test(new URL(url).hostname)?'component-overlays-v6':new URL(url).hostname==='skallstudio.com'?'clean-overlays-v5':/^(www\.)?(skallstudio\.com|louloudesaison\.com|chantelle\.com|driesvannoten\.com|siha\.com\.au|area51store\.co\.nz|balmoralrunning\.com|snellingstudio\.com|susannekaufmann\.com|lesseofficial\.com)$/.test(new URL(url).hostname)?'clean-overlays-v4':'clean-overlays-v3';
+ const captureVersion=/^(www\.)?driesvannoten\.com$/.test(new URL(url).hostname)?'persistent-consent-v8':/^(www\.)?(susannekaufmann\.com|calibre\.com\.au|gasbijoux\.com|driesvannoten\.com)$/.test(new URL(url).hostname)?'shadow-consent-v7':/^(www\.)?(louloudesaison\.com|apinistudio\.com|watchhouse\.com)$/.test(new URL(url).hostname)?'component-overlays-v6':new URL(url).hostname==='skallstudio.com'?'clean-overlays-v5':/^(www\.)?(skallstudio\.com|louloudesaison\.com|chantelle\.com|driesvannoten\.com|siha\.com\.au|area51store\.co\.nz|balmoralrunning\.com|snellingstudio\.com|susannekaufmann\.com|lesseofficial\.com)$/.test(new URL(url).hostname)?'clean-overlays-v4':'clean-overlays-v3';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -68,7 +68,7 @@ async function capture({url,mode}){
   // Keep access checks, age gates and the actual page content intact.
   await page.waitForTimeout(2000);
   // Persistent selectors also cover display:contents hosts and late popup insertion.
-  await page.addStyleTag({content:`pandectes-cmp, .needsclick[role="dialog"], newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
+  await page.addStyleTag({content:` #onetrust-consent-sdk, #onetrust-banner-sdk, pandectes-cmp, .needsclick[role="dialog"], newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
   await page.evaluate(()=>{
    const cleanOverlays=()=>{
    const providers=['pandectes-cmp','.needsclick[role="dialog"]','newsletter-popup','.shopify-section--popup','#pandectes-banner','#pandectes-container','.klaviyo-form-overlay','#usercentrics-root','#usercentrics-cmp-ui',
