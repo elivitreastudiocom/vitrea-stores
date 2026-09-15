@@ -26,7 +26,6 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
  }
 }
 const manifest={};
-let browser;
 async function capture({url,mode}){
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:v1`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
@@ -40,6 +39,7 @@ async function capture({url,mode}){
    }
   }catch{}
  }
+ const browser=await playwright.launch({args:chromium.args.filter(arg=>!['--single-process','--disable-web-security','--disable-site-isolation-trials','--allow-running-insecure-content'].includes(arg)),executablePath:await chromium.executablePath(),headless:true});
  const mobile=mode==='mobile';
  const width=mobile?390:1440;
  const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:1,locale:'en-GB',colorScheme:'light',serviceWorkers:'block'});
@@ -59,13 +59,10 @@ async function capture({url,mode}){
   (manifest[url]||={})[mode]=imagePath;
   console.log(`Captured ${mode} ${url}`);
  }catch(error){console.warn(`Unavailable ${mode} ${url}: ${error.message}`);}
- finally{await context.close();}
+ finally{await browser.close().catch(()=>{});}
 }
-try{
- browser=await playwright.launch({args:chromium.args,executablePath:await chromium.executablePath(),headless:true});
- const pending=[...jobs];
- await Promise.all(Array.from({length:4},async()=>{while(pending.length)await capture(pending.shift());}));
-}finally{await browser?.close();}
+const pending=[...jobs];
+await Promise.all(Array.from({length:3},async()=>{while(pending.length)await capture(pending.shift());}));
 await fs.writeFile(`${output}/captures.js`,`window.galleryCaptures = ${JSON.stringify(manifest)};\n`);
 const successful=Object.values(manifest).reduce((n,modes)=>n+Object.keys(modes).length,0);
 console.log(`Gallery built: ${successful}/${jobs.length} captures. Unavailable previews have an explicit fallback.`);
