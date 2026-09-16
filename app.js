@@ -35,6 +35,7 @@ function cardMarkup({store,url,type},mode){
  return `<article class="store-card"><a class="website-link" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visit ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot ${src?'':'no-capture'}">${preview}</div><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${pageLabel(type)}</p></div></div></a></article>`;
 }
 function renderReview(){
+ document.querySelector('#mobile-filter-summary').textContent=[websitesState.category,pageLabel(websitesState.page),websitesState.mode==='mobile'?'Mobile':'Desktop'].filter(Boolean).join(' · ');
  document.querySelector('#websites-category-filters').innerHTML=categories.map(category=>`<button type="button" data-category="${escapeHtml(category)}" aria-pressed="${category===websitesState.category}">${escapeHtml(category)}</button>`).join('');
  document.querySelector('#websites-page-filters').innerHTML=pageTypes.map(([type,label])=>`<button type="button" data-page-type="${type}" aria-pressed="${type===websitesState.page}">${label}</button>`).join('');
  const entries=galleryEntries(approvedWebsites(),websitesState);
@@ -56,3 +57,15 @@ document.querySelector('#year').textContent=new Date().getFullYear();renderRevie
 const galleryHeader=document.querySelector('.site-header');
 const updateHeaderHeight=()=>document.documentElement.style.setProperty('--header-height',`${galleryHeader.getBoundingClientRect().height}px`);
 new ResizeObserver(updateHeaderHeight).observe(galleryHeader);updateHeaderHeight();
+
+const filterToolbar=document.querySelector('.directory-toolbar');
+const filterToggle=document.querySelector('#mobile-filter-toggle');
+function setFiltersOpen(open,restoreFocus=false){
+ filterToolbar.classList.toggle('filters-open',open);
+ filterToggle.setAttribute('aria-expanded',String(open));
+ if(restoreFocus)filterToggle.focus({preventScroll:true});
+}
+filterToggle.addEventListener('click',()=>setFiltersOpen(filterToggle.getAttribute('aria-expanded')!=='true'));
+document.querySelector('#mobile-filter-done').addEventListener('click',()=>setFiltersOpen(false,true));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&filterToolbar.classList.contains('filters-open'))setFiltersOpen(false,true);});
+document.addEventListener('click',event=>{if(!filterToolbar.contains(event.target))setFiltersOpen(false);});

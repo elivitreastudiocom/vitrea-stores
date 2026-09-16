@@ -118,3 +118,17 @@ body .card-info h3{font-family:var(--serif)!important;font-size:var(--title-size
 .shot.no-capture{background:#fff}
 
 .directory-toolbar>.filters{flex-basis:100%;justify-content:flex-start;gap:4px 24px}
+
+/* Compact mobile disclosure; desktop keeps the existing visible filter groups. */
+.directory-toolbar>.mobile-filter-toggle,.directory-toolbar>.mobile-filter-done{display:none}
+@media(max-width:700px){
+ .directory-toolbar{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:8px 0;margin-bottom:20px;max-height:calc(100dvh - var(--header-height,116px) - 16px);overflow-y:auto}
+ .directory-toolbar>.mobile-filter-toggle{display:flex;align-items:center;gap:12px;width:100%;text-align:left;text-transform:none;color:var(--ink)}
+ #mobile-filter-summary{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:right;color:var(--muted)}
+ .filter-chevron{font-family:Arial,sans-serif;transition:transform .18s}
+ .filters-open .filter-chevron{transform:rotate(180deg)}
+ .directory-toolbar>.filters,.directory-toolbar>.page-filters,.directory-toolbar>.detail-modes{display:none}
+ .directory-toolbar.filters-open>.filters,.directory-toolbar.filters-open>.page-filters,.directory-toolbar.filters-open>.detail-modes{display:flex;flex-basis:auto;gap:4px 20px;margin-top:16px;justify-content:flex-start;align-self:stretch}
+ .directory-toolbar.filters-open>.mobile-filter-done{display:block;align-self:flex-end;margin-top:16px;color:var(--ink);text-transform:none}
+ .directory-toolbar>.mobile-filter-toggle::after,.directory-toolbar>.mobile-filter-done::after{display:none!important}
+}
