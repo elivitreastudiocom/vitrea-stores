@@ -26,12 +26,11 @@ function galleryEntries(collection,state){return collection.flatMap(store=>{
 });}
 function cardMarkup({store,url,type},mode){
  if(!url){
-  const home=screenshotUrl(store.url,mode);
-  return `<article class="store-card unavailable-card"><div class="shot no-page">${home?`<img src="${escapeHtml(home)}" alt="" loading="lazy" decoding="async" />`:''}<span class="page-unavailable">No ${pageLabel(type)} Available</span></div><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${pageLabel(type)}</p></div></div></article>`;
+  return `<article class="store-card unavailable-card"><div class="shot no-page"><span class="page-unavailable">No ${pageLabel(type)} Available</span></div><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${pageLabel(type)}</p></div></div></article>`;
  }
  const src=screenshotUrl(url,mode);
  const preview=src?`<img src="${escapeHtml(src)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)} · ${mode==='mobile'?'Mobile':'Desktop'}" loading="lazy" decoding="async" />`:'<span class="capture-unavailable">Preview unavailable</span>';
- return `<article class="store-card"><a class="website-link" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visit ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot ${src?'':'no-capture'}">${preview}</div><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${pageLabel(type)}</p></div><span class="external-arrow" aria-hidden="true">↗</span></div></a></article>`;
+ return `<article class="store-card"><a class="website-link" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visit ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot ${src?'':'no-capture'}">${preview}</div><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${pageLabel(type)}</p></div></div></a></article>`;
 }
 function renderReview(){
  document.querySelector('#websites-page-filters').innerHTML=pageTypes.map(([type,label])=>`<button type="button" data-page-type="${type}" aria-pressed="${type===websitesState.page}">${label}</button>`).join('');

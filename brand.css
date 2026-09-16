@@ -108,9 +108,11 @@ body .card-info h3{font-family:var(--serif)!important;font-size:var(--title-size
 /* Stable card positions and quiet, persistent navigation. */
 .site-header{position:sticky;top:0;z-index:30;background:var(--paper)}
 .directory-toolbar{position:sticky;top:var(--header-height,80px);z-index:20;background:var(--paper);padding:12px 0;margin-top:12px}
-.shot.no-page{position:relative;display:grid;place-items:center;background:var(--soft)}
+.shot.no-page{position:relative;display:grid;place-items:center;background:#fff}
 .shot.no-page img{position:absolute;inset:0;opacity:.12;filter:grayscale(1)}
 .page-unavailable{position:relative;z-index:1;padding:16px;text-align:center;color:var(--ink)}
 .unavailable-card:hover .shot{box-shadow:none}
 
 .unavailable-card{cursor:default}
+
+.shot.no-capture{background:#fff}

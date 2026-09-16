@@ -30,7 +30,8 @@ const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
  const refreshDesktop=mode==='desktop' && ['tayanecklace.com','skallstudio.com','quadrodesign.it','lore.world','lesseofficial.com','ssklabs.com','itsgoodbacteria.com','watchhouse.com','susannekaufmann.com','cdp.world','lilluvdog.com','samuelsnider.com','mackintosh.com','galeriegreennyc.com','apinistudio.com','balmoralrunning.com'].includes(new URL(url).hostname.replace(/^www\./,''));
  const refreshPopup=['lorrainesorlet.com','area51store.co.nz','koppen.co','chantelle.com'].includes(new URL(url).hostname.replace(/^www\./,''));
- const captureVersion=mode==='desktop'&&new URL(url).hostname==='skallstudio.com'?'skall-surface-v16':new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
+ const refreshAudit=['koppen.co','chantelle.com','ceciliebahnsen.com'].includes(new URL(url).hostname.replace(/^www\./,''));
+ const captureVersion=refreshAudit?'clean-ready-v17':mode==='desktop'&&new URL(url).hostname==='skallstudio.com'?'skall-surface-v16':new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -62,6 +63,18 @@ async function capture({url,mode}){
    if(v.readyState>=2){resolve();return;}
    v.addEventListener('loadeddata',resolve,{once:true});setTimeout(resolve,8000);
   }))));
+  if(refreshAudit){
+   await page.locator('video').evaluateAll(videos=>Promise.all(videos.filter(v=>v.getBoundingClientRect().top<innerHeight).map(async v=>{v.muted=true;v.preload='auto';await v.play().catch(()=>{});await new Promise(resolve=>setTimeout(resolve,2000));})));
+  }
+  if(new URL(url).hostname.replace(/^www\./,'')==='koppen.co'){
+   for(const name of ['Necessary','Dismiss newsletter']){
+    const close=page.getByRole('button',{name,exact:true});
+    await close.waitFor({state:'visible',timeout:5000}).catch(()=>{});
+    if(await close.isVisible())await close.click().catch(()=>{});
+   }
+   // The consent/newsletter backdrop remains active after the provider is hidden.
+   await page.addStyleTag({content:'button[aria-label="Close modal"][class*="backdrop-blur"]{display:none!important}'});
+  }
   const title=await page.title();
   if(/access denied|just a moment|checking your browser|robot check|attention required|page not found/i.test(title))throw new Error('Capture blocked');
   await page.locator('body').waitFor({state:'visible',timeout:5000});
@@ -70,7 +83,7 @@ async function capture({url,mode}){
   // Keep access checks, age gates and the actual page content intact.
   await page.waitForTimeout(1200);
   // Trigger in-view reveals in the region that will be photographed, then return to the top.
-  if(!mobile){
+  if(!mobile||refreshAudit){
    for(const y of [750,1500]){await page.evaluate(y=>window.scrollTo(0,y),y);await page.waitForTimeout(400);}
    await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(400);
   }
