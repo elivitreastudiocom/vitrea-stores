@@ -30,7 +30,7 @@ const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
  const refreshDesktop=mode==='desktop' && ['tayanecklace.com','skallstudio.com','quadrodesign.it','lore.world','lesseofficial.com','ssklabs.com','itsgoodbacteria.com','watchhouse.com','susannekaufmann.com','cdp.world','lilluvdog.com','samuelsnider.com','mackintosh.com','galeriegreennyc.com','apinistudio.com','balmoralrunning.com'].includes(new URL(url).hostname.replace(/^www\./,''));
  const refreshPopup=['lorrainesorlet.com','area51store.co.nz','koppen.co','chantelle.com'].includes(new URL(url).hostname.replace(/^www\./,''));
- const captureVersion=refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
+ const captureVersion=new URL(url).hostname==='area51store.co.nz'?'marsello-v14':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -82,7 +82,7 @@ async function capture({url,mode}){
    await Promise.race([Promise.all(images.map(img=>img.decode().catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,8000))]);
   });
   // Persistent selectors also cover display:contents hosts and late popup insertion.
-  await page.addStyleTag({content:` [id^="shopify-block-"][id*="__consent"], #popup_newsletter, #shopify-section-popup, #global-popup-global-popup, .nl-popup, #onetrust-consent-sdk, #onetrust-banner-sdk, pandectes-cmp, .needsclick[role="dialog"], newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
+  await page.addStyleTag({content:` body:has(#marsello-form-js) .lg-outer, body:has(#marsello-form-js) .lg-backdrop, [id^="shopify-block-"][id*="__consent"], #popup_newsletter, #shopify-section-popup, #global-popup-global-popup, .nl-popup, #onetrust-consent-sdk, #onetrust-banner-sdk, pandectes-cmp, .needsclick[role="dialog"], newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
   const cleanPage=()=>page.evaluate(()=>{
    const cleanOverlays=()=>{
    const providers=['[id^="shopify-block-"][id*="__consent"]','#popup_newsletter','#shopify-section-popup','pandectes-cmp','.needsclick[role="dialog"]','newsletter-popup','.shopify-section--popup','#pandectes-banner','#pandectes-container','.klaviyo-form-overlay','#usercentrics-root','#usercentrics-cmp-ui',
@@ -158,16 +158,17 @@ async function capture({url,mode}){
      await Promise.race([Promise.all(images.map(img=>img.decode().catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,6000))]);
     });
     if(top>0)await page.evaluate(()=>{
-     document.querySelectorAll('header,nav,[role="banner"]').forEach(el=>{
+     document.querySelectorAll('body *').forEach(el=>{
       const s=getComputedStyle(el),r=el.getBoundingClientRect();
-      if(['fixed','sticky'].includes(s.position)&&r.height<220&&r.top<100)el.style.setProperty('visibility','hidden','important');
+      if(['fixed','sticky'].includes(s.position)&&r.height<220&&r.top<100&&(el.matches('header,nav,[role="banner"],[class*="header"],[class*="Header"]')||el.querySelector('nav,[role="navigation"]')))el.style.setProperty('visibility','hidden','important');
      });
     });
     const actualTop=await page.evaluate(()=>window.scrollY);
     const tileHeight=Math.min(900,captureHeight-top);
     const offset=Math.round(top-actualTop);
     if(offset<0||offset+tileHeight>900)throw new Error(`Scroll capture did not reach its target: requested ${top}, actual ${actualTop}, offset ${offset}`);
-    const tile=await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:45000});
+    const surface=await Promise.race([session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:false}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Viewport capture timed out')),30000))]);
+    const tile=Buffer.from(surface.data,'base64');
     tiles.push({input:await sharp(tile).extract({left:0,top:offset,width,height:tileHeight}).toBuffer(),left:0,top});
    }
    bytes=await sharp({create:{width,height:captureHeight,channels:3,background:'#fff'}}).composite(tiles).jpeg({quality:95,chromaSubsampling:'4:4:4'}).toBuffer();

@@ -618,5 +618,16 @@ window.catalogData = {
       "about": "https://syncere.com/story",
       "product": "https://syncere.com/product"
     }
+  },
+  "https://207ouest.com/": {
+    "name": "207 Ouest",
+    "published": true,
+    "tags": [
+      "Ecommerce"
+    ],
+    "pages": {
+      "catalog": "https://207ouest.com/collections/all",
+      "product": "https://207ouest.com/products/mary-jane-red-velvet"
+    }
   }
 };
