@@ -68,4 +68,4 @@ function setFiltersOpen(open,restoreFocus=false){
 filterToggle.addEventListener('click',()=>setFiltersOpen(filterToggle.getAttribute('aria-expanded')!=='true'));
 document.querySelector('#mobile-filter-done').addEventListener('click',()=>setFiltersOpen(false,true));
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&filterToolbar.classList.contains('filters-open'))setFiltersOpen(false,true);});
-document.addEventListener('click',event=>{if(!filterToolbar.contains(event.target))setFiltersOpen(false);});
+document.addEventListener('click',event=>{if(!event.composedPath().includes(filterToolbar))setFiltersOpen(false);});
