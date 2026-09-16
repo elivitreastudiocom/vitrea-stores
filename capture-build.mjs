@@ -147,6 +147,7 @@ async function capture({url,mode}){
   // Capture the rendered surface directly without resizing the layout viewport.
   const session=await context.newCDPSession(page);
   const captureHeight=Math.min(height,Math.round(width*1.5));
+  await page.locator('video').evaluateAll(videos=>videos.forEach(video=>video.pause()));
   let bytes;
   if(!mobile&&!['watchhouse.com','cdp.world','skallstudio.com'].includes(new URL(url).hostname.replace(/^www\./,''))){
    // Photograph each region while it is actually in view. Offscreen surface clips
