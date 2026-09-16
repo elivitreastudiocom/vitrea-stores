@@ -116,3 +116,5 @@ body .card-info h3{font-family:var(--serif)!important;font-size:var(--title-size
 .unavailable-card{cursor:default}
 
 .shot.no-capture{background:#fff}
+
+.directory-toolbar>.filters{flex-basis:100%;justify-content:flex-start;gap:4px 24px}

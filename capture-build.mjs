@@ -20,6 +20,7 @@ try{
 const jobs=[];
 // Templates first, then the curated reference library. Blog is a feature, not a page-view tab.
 for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].template)-Number(!!a[1].template))){
+ if(record.excluded)continue;
  for(const url of new Set([home,...Object.entries(record.pages).filter(([type])=>type!=='blog').map(([,url])=>url)])){
   if(!/^https:\/\//.test(url))throw new Error('Only HTTPS editorial URLs may be captured');
   for(const mode of ['mobile','desktop'])jobs.push({url,mode});
