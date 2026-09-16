@@ -134,7 +134,8 @@ async function capture({url,mode}){
    cleanOverlays();
    // No perpetual style observer: animated storefronts otherwise keep invalidating rendering.
    document.documentElement.style.setProperty('overflow','auto','important');
-   document.body.style.setProperty('overflow','auto','important');
+   // A height:100% body with overflow:auto becomes a nested scroller (e.g. Taya).
+   document.body.style.setProperty('overflow','visible','important');
   });
   await cleanPage();
   await page.evaluate(()=>{document.documentElement.style.scrollBehavior='auto';document.body.style.scrollBehavior='auto';window.scrollTo({top:0,behavior:'instant'});});
@@ -165,7 +166,7 @@ async function capture({url,mode}){
     const actualTop=await page.evaluate(()=>window.scrollY);
     const tileHeight=Math.min(900,captureHeight-top);
     const offset=Math.round(top-actualTop);
-    if(offset<0||offset+tileHeight>900)throw new Error('Scroll capture did not reach its target');
+    if(offset<0||offset+tileHeight>900)throw new Error(`Scroll capture did not reach its target: requested ${top}, actual ${actualTop}, offset ${offset}`);
     const tile=await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:45000});
     tiles.push({input:await sharp(tile).extract({left:0,top:offset,width,height:tileHeight}).toBuffer(),left:0,top});
    }
