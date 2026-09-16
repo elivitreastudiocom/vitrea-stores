@@ -19,12 +19,16 @@ function metadata(store){return window.catalogData?.[store.url]||{};}
 function storePageUrl(store,type){const value=type==='home'?store.url:pageLinks[store.url]?.[type]||metadata(store).pages?.[type];try{const url=new URL(value);return ['http:','https:'].includes(url.protocol)?url.href:null;}catch{return null;}}
 const captureIndex=Object.fromEntries(Object.entries(window.galleryCaptures||{}).map(([url,record])=>[new URL(url).href,record]));
 function screenshotUrl(url,mode){const key=new URL(url).href;return captureIndex[key]?.[mode]||(key==='https://tadaimacph.com/'&&mode==='desktop'?'tadaima-desktop.jpg':null);}
-function approvedWebsites(){return [...new Map([...stores,...reviewStores.filter(store=>reviewDecisions[store.url]?.diego==='include')].map(store=>[new URL(store.url).href,store])).values()];}
+function approvedWebsites(){return [...new Map([...stores,...Object.entries(window.catalogData||{}).filter(([,record])=>record.published).map(([url,record])=>({url,name:record.name})),...reviewStores.filter(store=>reviewDecisions[store.url]?.diego==='include')].map(store=>[new URL(store.url).href,store])).values()];}
 function galleryEntries(collection,state){return collection.flatMap(store=>{
  if(!`${store.name} ${store.url}`.toLowerCase().includes(state.term))return [];
- const url=storePageUrl(store,state.page);return url?[{store,url,type:state.page}]:[];
+ const url=storePageUrl(store,state.page);return [{store,url,type:state.page}];
 });}
 function cardMarkup({store,url,type},mode){
+ if(!url){
+  const home=screenshotUrl(store.url,mode);
+  return `<article class="store-card unavailable-card"><div class="shot no-page">${home?`<img src="${escapeHtml(home)}" alt="" loading="lazy" decoding="async" />`:''}<span class="page-unavailable">No ${pageLabel(type)} Available</span></div><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${pageLabel(type)}</p></div></div></article>`;
+ }
  const src=screenshotUrl(url,mode);
  const preview=src?`<img src="${escapeHtml(src)}" alt="${escapeHtml(store.name)} · ${pageLabel(type)} · ${mode==='mobile'?'Mobile':'Desktop'}" loading="lazy" decoding="async" />`:'<span class="capture-unavailable">Preview unavailable</span>';
  return `<article class="store-card"><a class="website-link" href="${escapeHtml(url)}" target="_blank" rel="noopener" data-direct-visit aria-label="Visit ${escapeHtml(store.name)} · ${pageLabel(type)}"><div class="shot ${src?'':'no-capture'}">${preview}</div><div class="card-info"><div><h3>${escapeHtml(store.name)}</h3><p>${pageLabel(type)}</p></div><span class="external-arrow" aria-hidden="true">↗</span></div></a></article>`;
@@ -36,7 +40,7 @@ function renderReview(){
  document.querySelector('#review-count').textContent=`${count} ${count===1?'website':'websites'}`;
  reviewList.innerHTML=entries.length?entries.map(entry=>cardMarkup(entry,websitesState.mode)).join(''):'<p class="empty">No matching pages.</p>';
  reviewList.classList.toggle('directory-mobile',websitesState.mode==='mobile');
- reviewList.querySelectorAll('.shot img').forEach(img=>img.addEventListener('error',()=>{const shot=img.parentElement;shot.classList.add('no-capture');shot.innerHTML='<span class="capture-unavailable">Preview unavailable</span>';},{once:true}));
+ reviewList.querySelectorAll('.shot img').forEach(img=>img.addEventListener('error',()=>{const shot=img.parentElement;if(shot.classList.contains('no-page')){img.remove();return;}shot.classList.add('no-capture');shot.innerHTML='<span class="capture-unavailable">Preview unavailable</span>';},{once:true}));
  if(typeof sharedState==='undefined'||!sharedState.ready){reviewList.innerHTML='<p class="empty">Loading websites…</p>';document.querySelector('#review-count').textContent='';}
 }
 function render(){renderReview();}
@@ -44,3 +48,8 @@ document.querySelector('#websites-page-filters').addEventListener('click',event=
 document.querySelector('#review-search').addEventListener('input',event=>{websitesState.term=event.target.value.trim().toLowerCase();renderReview();});
 document.querySelectorAll('[data-gallery-mode]').forEach(button=>button.addEventListener('click',()=>{galleryMode=websitesState.mode=button.dataset.galleryMode;document.querySelectorAll('[data-gallery-mode]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));renderReview();}));
 document.querySelector('#year').textContent=new Date().getFullYear();renderReview();
+
+// Keep the sticky controls below the real header height, including wrapped mobile navigation.
+const galleryHeader=document.querySelector('.site-header');
+const updateHeaderHeight=()=>document.documentElement.style.setProperty('--header-height',`${galleryHeader.getBoundingClientRect().height}px`);
+new ResizeObserver(updateHeaderHeight).observe(galleryHeader);updateHeaderHeight();

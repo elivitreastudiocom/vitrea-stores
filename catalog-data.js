@@ -1,4 +1,3 @@
-// Public editorial metadata. Shared page edits in Supabase take precedence.
 window.catalogData = {
   "https://www.kynandfolk.com": {
     "tags": [
@@ -547,6 +546,77 @@ window.catalogData = {
       "catalog": "https://tadaimacph.com/shop/all",
       "product": "https://tadaimacph.com/products/nola-turtleneck-sweater-black",
       "blog": "https://tadaimacph.com/journal"
+    }
+  },
+  "https://seed.com/": {
+    "name": "Seed",
+    "published": true,
+    "tags": [
+      "Ecommerce"
+    ],
+    "pages": {
+      "about": "https://seed.com/approach",
+      "catalog": "https://seed.com/products",
+      "product": "https://seed.com/daily-synbiotic"
+    }
+  },
+  "https://sonofatailor.com/": {
+    "name": "Son of a Tailor",
+    "published": true,
+    "tags": [
+      "Ecommerce"
+    ],
+    "pages": {
+      "about": "https://www.sonofatailor.com/our-mission",
+      "catalog": "https://www.sonofatailor.com/silk-collection",
+      "product": "https://www.sonofatailor.com/product/merino-sweater/103-263-265-1368"
+    }
+  },
+  "https://teklafabrics.com/": {
+    "name": "Tekla",
+    "published": true,
+    "tags": [
+      "Ecommerce"
+    ],
+    "pages": {
+      "about": "https://teklafabrics.com/about-tekla",
+      "catalog": "https://teklafabrics.com/all-products",
+      "product": "https://teklafabrics.com/product/terry-classic-bathrobe-racing-green-stripes"
+    }
+  },
+  "https://reome.com/": {
+    "name": "REOME",
+    "published": true,
+    "tags": [
+      "Ecommerce"
+    ],
+    "pages": {
+      "about": "https://reome.com/pages/our-story",
+      "catalog": "https://reome.com/collections/the-collection",
+      "product": "https://reome.com/products/active-recovery-broth"
+    }
+  },
+  "https://graza.co/": {
+    "name": "Graza",
+    "published": true,
+    "tags": [
+      "Ecommerce"
+    ],
+    "pages": {
+      "about": "https://www.graza.co/pages/about-us",
+      "catalog": "https://www.graza.co/collections/all",
+      "product": "https://www.graza.co/products/drizzle"
+    }
+  },
+  "https://syncere.com/": {
+    "name": "Syncere",
+    "published": true,
+    "tags": [
+      "Ecommerce"
+    ],
+    "pages": {
+      "about": "https://syncere.com/story",
+      "product": "https://syncere.com/product"
     }
   }
 };

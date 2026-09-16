@@ -28,7 +28,9 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
- const captureVersion=mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
+ const refreshDesktop=mode==='desktop' && ['tayanecklace.com','skallstudio.com','quadrodesign.it','lore.world','lesseofficial.com','ssklabs.com','itsgoodbacteria.com','watchhouse.com','susannekaufmann.com','cdp.world','lilluvdog.com','samuelsnider.com','mackintosh.com','galeriegreennyc.com','apinistudio.com','balmoralrunning.com'].includes(new URL(url).hostname.replace(/^www\./,''));
+ const refreshPopup=['lorrainesorlet.com','area51store.co.nz','koppen.co','chantelle.com'].includes(new URL(url).hostname.replace(/^www\./,''));
+ const captureVersion=refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -80,10 +82,10 @@ async function capture({url,mode}){
    await Promise.race([Promise.all(images.map(img=>img.decode().catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,8000))]);
   });
   // Persistent selectors also cover display:contents hosts and late popup insertion.
-  await page.addStyleTag({content:` #global-popup-global-popup, .nl-popup, #onetrust-consent-sdk, #onetrust-banner-sdk, pandectes-cmp, .needsclick[role="dialog"], newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
-  await page.evaluate(()=>{
+  await page.addStyleTag({content:` [id^="shopify-block-"][id*="__consent"], #popup_newsletter, #shopify-section-popup, #global-popup-global-popup, .nl-popup, #onetrust-consent-sdk, #onetrust-banner-sdk, pandectes-cmp, .needsclick[role="dialog"], newsletter-popup, .shopify-section--popup, #pandectes-banner, #pandectes-container, [data-capture-overlay] {display:none!important;visibility:hidden!important} newsletter-popup::backdrop{display:none!important}`});
+  const cleanPage=()=>page.evaluate(()=>{
    const cleanOverlays=()=>{
-   const providers=['pandectes-cmp','.needsclick[role="dialog"]','newsletter-popup','.shopify-section--popup','#pandectes-banner','#pandectes-container','.klaviyo-form-overlay','#usercentrics-root','#usercentrics-cmp-ui',
+   const providers=['[id^="shopify-block-"][id*="__consent"]','#popup_newsletter','#shopify-section-popup','pandectes-cmp','.needsclick[role="dialog"]','newsletter-popup','.shopify-section--popup','#pandectes-banner','#pandectes-container','.klaviyo-form-overlay','#usercentrics-root','#usercentrics-cmp-ui',
     '[data-testid="POPUP"]','#onetrust-banner-sdk','#onetrust-consent-sdk',
     '#CybotCookiebotDialog','#CybotCookiebotDialogBodyUnderlay','.cky-consent-container',
     '.cky-overlay','.shopify-pc__banner','.shopify-pc__prefs__dialog',
@@ -121,6 +123,9 @@ async function capture({url,mode}){
      }
     }
    }
+   if(location.hostname.includes('lorrainesorlet.com')){
+    document.querySelectorAll('[class*="backdrop-blur"]').forEach(el=>{if(!(el.innerText||'').trim()&&getComputedStyle(el).position==='fixed')hide(el);});
+   }
    // Remove empty backdrops associated with dismissed marketing dialogs.
    document.querySelectorAll('.modal-backdrop,.popup-overlay,.newsletter-overlay,.klaviyo-form-overlay').forEach(el=>{
     if(!(el.innerText||'').trim())hide(el);
@@ -130,16 +135,48 @@ async function capture({url,mode}){
    // No perpetual style observer: animated storefronts otherwise keep invalidating rendering.
    document.documentElement.style.setProperty('overflow','auto','important');
    document.body.style.setProperty('overflow','auto','important');
-   window.scrollTo(0,0);
   });
+  await cleanPage();
+  await page.evaluate(()=>{document.documentElement.style.scrollBehavior='auto';document.body.style.scrollBehavior='auto';window.scrollTo({top:0,behavior:'instant'});});
   const height=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
   // Capture the rendered surface directly without resizing the layout viewport.
   const session=await context.newCDPSession(page);
-  const shot=await Promise.race([
-   session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:Math.min(height,Math.round(width*1.5)),scale:mobile?2:1}}),
-   new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
-  ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
-  const bytes=Buffer.from(shot.data,'base64');
+  const captureHeight=Math.min(height,Math.round(width*1.5));
+  let bytes;
+  if(!mobile){
+   // Photograph each region while it is actually in view. Offscreen surface clips
+   // leave blank areas on sites whose images/animations render only during scrolling.
+   const tiles=[];
+   for(let top=0;top<captureHeight;top+=900){
+    await page.evaluate(y=>window.scrollTo({top:y,behavior:'instant'}),top);
+    await page.waitForTimeout(1000);
+    await cleanPage();
+    await page.evaluate(async()=>{
+     const images=[...document.images].filter(img=>{const r=img.getBoundingClientRect();return r.top<innerHeight&&r.bottom>0;});
+     images.forEach(img=>{img.loading='eager';});
+     await Promise.race([Promise.all(images.map(img=>img.decode().catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,6000))]);
+    });
+    if(top>0)await page.evaluate(()=>{
+     document.querySelectorAll('header,nav,[role="banner"]').forEach(el=>{
+      const s=getComputedStyle(el),r=el.getBoundingClientRect();
+      if(['fixed','sticky'].includes(s.position)&&r.height<220&&r.top<100)el.style.setProperty('visibility','hidden','important');
+     });
+    });
+    const actualTop=await page.evaluate(()=>window.scrollY);
+    const tileHeight=Math.min(900,captureHeight-top);
+    const offset=Math.round(top-actualTop);
+    if(offset<0||offset+tileHeight>900)throw new Error('Scroll capture did not reach its target');
+    const tile=await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:45000});
+    tiles.push({input:await sharp(tile).extract({left:0,top:offset,width,height:tileHeight}).toBuffer(),left:0,top});
+   }
+   bytes=await sharp({create:{width,height:captureHeight,channels:3,background:'#fff'}}).composite(tiles).jpeg({quality:95,chromaSubsampling:'4:4:4'}).toBuffer();
+  }else{
+   const shot=await Promise.race([
+    session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:captureHeight,scale:2}}),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
+   ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
+   bytes=Buffer.from(shot.data,'base64');
+  }
   await session.detach();
   await sharp(bytes).resize({width:mobile?780:1200,withoutEnlargement:true}).jpeg({quality:92,chromaSubsampling:'4:4:4'}).toFile(`${output}/${imagePath}`);
   (manifest[url]||={})[mode]=imagePath;
