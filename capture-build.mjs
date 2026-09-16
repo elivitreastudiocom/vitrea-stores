@@ -181,6 +181,7 @@ async function capture({url,mode}){
   if(review&&height>32000)throw new Error('Home exceeds full-capture height limit');
   const captureHeight=review?height:Math.min(height,Math.round(width*1.5));
   await page.locator('video').evaluateAll(videos=>videos.forEach(video=>video.pause()));
+  if(review)await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important}'});
   let bytes;
   if(!review&&!mobile&&!['watchhouse.com','cdp.world','skallstudio.com','koppen.co'].includes(new URL(url).hostname.replace(/^www\./,''))){
    // Photograph each region while it is actually in view. Offscreen surface clips
@@ -213,9 +214,9 @@ async function capture({url,mode}){
    bytes=await sharp({create:{width,height:captureHeight,channels:3,background:'#fff'}}).composite(tiles).jpeg({quality:95,chromaSubsampling:'4:4:4'}).toBuffer();
   }else{
    const shot=await Promise.race([
-    session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:captureHeight,scale:mobile?2:1}}),
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
-   ]).catch(async error=>{if(review)throw error;return {data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')};});
+    session.send('Page.captureScreenshot',{format:'jpeg',quality:95,optimizeForSpeed:review,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:captureHeight,scale:mobile?2:1}}),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),review?90000:45000))
+   ]).catch(async error=>{return {data:(await page.screenshot({type:'jpeg',quality:95,fullPage:review,animations:'disabled',timeout:review?30000:15000})).toString('base64')};});
    bytes=Buffer.from(shot.data,'base64');
   }
   await session.detach();
