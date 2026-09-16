@@ -64,7 +64,7 @@ async function capture({url,mode}){
    v.addEventListener('loadeddata',resolve,{once:true});setTimeout(resolve,8000);
   }))));
   if(refreshAudit){
-   await page.locator('video').evaluateAll(videos=>Promise.all(videos.filter(v=>v.getBoundingClientRect().top<innerHeight).map(async v=>{v.muted=true;v.preload='auto';await v.play().catch(()=>{});await new Promise(resolve=>setTimeout(resolve,2000));})));
+   await page.locator('video').evaluateAll(videos=>Promise.all(videos.filter(v=>v.getBoundingClientRect().top<innerHeight).map(async v=>{v.muted=true;v.preload='auto';await Promise.race([v.play().catch(()=>{}),new Promise(resolve=>setTimeout(resolve,5000))]);await new Promise(resolve=>setTimeout(resolve,2000));})));
   }
   if(new URL(url).hostname.replace(/^www\./,'')==='koppen.co'){
    for(const name of ['Necessary','Dismiss newsletter']){
