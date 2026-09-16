@@ -30,7 +30,7 @@ const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
  const refreshDesktop=mode==='desktop' && ['tayanecklace.com','skallstudio.com','quadrodesign.it','lore.world','lesseofficial.com','ssklabs.com','itsgoodbacteria.com','watchhouse.com','susannekaufmann.com','cdp.world','lilluvdog.com','samuelsnider.com','mackintosh.com','galeriegreennyc.com','apinistudio.com','balmoralrunning.com'].includes(new URL(url).hostname.replace(/^www\./,''));
  const refreshPopup=['lorrainesorlet.com','area51store.co.nz','koppen.co','chantelle.com'].includes(new URL(url).hostname.replace(/^www\./,''));
- const captureVersion=new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
+ const captureVersion=mode==='desktop'&&new URL(url).hostname==='skallstudio.com'?'skall-surface-v16':new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -139,12 +139,16 @@ async function capture({url,mode}){
   });
   await cleanPage();
   await page.evaluate(()=>{document.documentElement.style.scrollBehavior='auto';document.body.style.scrollBehavior='auto';window.scrollTo({top:0,behavior:'instant'});});
+  if(!mobile&&new URL(url).hostname==='skallstudio.com'){
+   for(const top of [750,1500,0]){await page.evaluate(y=>window.scrollTo({top:y,behavior:'instant'}),top);await page.waitForTimeout(1000);}
+   await page.locator('video').evaluateAll(videos=>videos.forEach(video=>video.pause()));
+  }
   const height=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
   // Capture the rendered surface directly without resizing the layout viewport.
   const session=await context.newCDPSession(page);
   const captureHeight=Math.min(height,Math.round(width*1.5));
   let bytes;
-  if(!mobile){
+  if(!mobile&&!['watchhouse.com','cdp.world','skallstudio.com'].includes(new URL(url).hostname.replace(/^www\./,''))){
    // Photograph each region while it is actually in view. Offscreen surface clips
    // leave blank areas on sites whose images/animations render only during scrolling.
    const tiles=[];
@@ -175,7 +179,7 @@ async function capture({url,mode}){
    bytes=await sharp({create:{width,height:captureHeight,channels:3,background:'#fff'}}).composite(tiles).jpeg({quality:95,chromaSubsampling:'4:4:4'}).toBuffer();
   }else{
    const shot=await Promise.race([
-    session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:captureHeight,scale:2}}),
+    session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:captureHeight,scale:mobile?2:1}}),
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
    ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
    bytes=Buffer.from(shot.data,'base64');
