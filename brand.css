@@ -132,3 +132,23 @@ body .card-info h3{font-family:var(--serif)!important;font-size:var(--title-size
  .directory-toolbar.filters-open>.mobile-filter-done{display:block;align-self:flex-end;margin-top:16px;color:var(--ink);text-transform:none}
  .directory-toolbar>.mobile-filter-toggle::after,.directory-toolbar>.mobile-filter-done::after{display:none!important}
 }
+
+.ecommerce-review-controls{display:flex;align-items:center;flex-wrap:wrap;gap:16px 32px;margin:24px 0}
+.ecommerce-review-controls h2{margin:0;font-size:32px}
+.ecommerce-review-controls label{display:flex;align-items:center;gap:12px}
+.ecommerce-review-controls select{font:inherit;color:inherit;background:#fff;border:1px solid #ddd;border-radius:4px;padding:8px}
+.ecommerce-review-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:32px 24px}
+.ecommerce-long-shot{aspect-ratio:2/3;overflow:auto;background:#fff;border-radius:6px;scrollbar-width:thin}
+.ecommerce-long-shot img{display:block;width:100%;height:auto}
+.ecommerce-long-shot>span{display:grid;place-items:center;min-height:100%;text-align:center}
+.ecommerce-card-meta{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:12px}
+.ecommerce-card-meta h3,.ecommerce-tags{font-size:14px;margin:0}
+.ecommerce-card-meta a{text-decoration:underline;text-underline-offset:4px;white-space:nowrap}
+.ecommerce-tags{color:var(--muted);margin:8px 0;line-height:1.5}
+.ecommerce-decision{display:flex;flex-direction:column;gap:8px}
+.ecommerce-decision>div{display:flex;flex-wrap:wrap;gap:16px}
+.ecommerce-decision button{font:inherit;color:var(--muted);background:none;border:0;border-bottom:1px solid transparent;padding:8px 0;cursor:pointer}
+.ecommerce-decision button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.ecommerce-decision button:disabled{opacity:.5;cursor:wait}
+@media(max-width:1100px){.ecommerce-review-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.ecommerce-review-grid{grid-template-columns:1fr}.ecommerce-review-controls h2{font-size:32px}}

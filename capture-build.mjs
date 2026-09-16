@@ -17,6 +17,12 @@ try{
  const response=await fetch('https://vitrea-stores.vercel.app/captures.js',{signal:AbortSignal.timeout(10000)});
  if(response.ok){const text=await response.text();old=JSON.parse(text.slice(text.indexOf('=')+1).trim().replace(/;$/,''));}
 }catch{}
+const reviewSource=await fs.readFile('ecommerce-review-data.js','utf8');
+const reviewItems=JSON.parse(reviewSource.slice(reviewSource.indexOf('=')+1).trim().replace(/;$/,''));
+const reviewKey=value=>{const u=new URL(value);u.hash='';u.hostname=u.hostname.replace(/^www\./,'');u.pathname=u.pathname.replace(/\/+$/,'')||'/';return u.href;};
+let oldReviews={};
+try{const response=await fetch('https://vitrea-stores.vercel.app/ecommerce-captures.js',{signal:AbortSignal.timeout(10000)});if(response.ok){const source=await response.text();oldReviews=JSON.parse(source.slice(source.indexOf('=')+1).trim().replace(/;$/,''));}}catch{}
+const reviewManifest={};
 const jobs=[];
 // Templates first, then the curated reference library. Blog is a feature, not a page-view tab.
 for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].template)-Number(!!a[1].template))){
@@ -26,22 +32,25 @@ for(const [home,record] of Object.entries(catalog).sort((a,b)=>Number(!!b[1].tem
   for(const mode of ['mobile','desktop'])jobs.push({url,mode});
  }
 }
+for(const item of reviewItems)jobs.push({url:item.url,mode:'review'});
 const manifest={};
 const executablePath=await chromium.executablePath();
 async function capture({url,mode}){
+ const review=mode==='review';
+ const record=path=>{if(review)reviewManifest[reviewKey(url)]=path;else (manifest[url]||={})[mode]=path;};
  const refreshDesktop=mode==='desktop' && ['tayanecklace.com','skallstudio.com','quadrodesign.it','lore.world','lesseofficial.com','ssklabs.com','itsgoodbacteria.com','watchhouse.com','susannekaufmann.com','cdp.world','lilluvdog.com','samuelsnider.com','mackintosh.com','galeriegreennyc.com','apinistudio.com','balmoralrunning.com'].includes(new URL(url).hostname.replace(/^www\./,''));
  const refreshPopup=['lorrainesorlet.com','area51store.co.nz','koppen.co','chantelle.com'].includes(new URL(url).hostname.replace(/^www\./,''));
  const refreshAudit=['koppen.co','chantelle.com','ceciliebahnsen.com'].includes(new URL(url).hostname.replace(/^www\./,''));
- const captureVersion=new URL(url).hostname.replace(/^www\./,'')==='koppen.co'?'koppen-newsletter-v18':refreshAudit?'clean-ready-v17':mode==='desktop'&&new URL(url).hostname==='skallstudio.com'?'skall-surface-v16':new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
+ const captureVersion=review?'review-home-v1':new URL(url).hostname.replace(/^www\./,'')==='koppen.co'?'koppen-newsletter-v18':refreshAudit?'clean-ready-v17':mode==='desktop'&&new URL(url).hostname==='skallstudio.com'?'skall-surface-v16':new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
- const previous=old[url]?.[mode];
+ const previous=review?oldReviews[reviewKey(url)]:old[url]?.[mode];
  if(previous===imagePath){
   try{
    const response=await fetch(`https://vitrea-stores.vercel.app/${previous}`,{signal:AbortSignal.timeout(10000)});
    if(response.ok&&response.headers.get('content-type')?.startsWith('image/')){
     await fs.writeFile(`${output}/${imagePath}`,Buffer.from(await response.arrayBuffer()));
-    (manifest[url]||={})[mode]=imagePath;return;
+    record(imagePath);return;
    }
   }catch{}
  }
@@ -50,6 +59,7 @@ async function capture({url,mode}){
  const width=mobile?390:1440;
  const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:mobile?2:1,locale:'en-GB',colorScheme:'light',serviceWorkers:'block'});
  try{
+  context.setDefaultTimeout(15000);
   const page=await context.newPage();
   const response=await page.goto(url,{waitUntil:'commit',timeout:45000});
   if(response&&response.status()>=400)throw new Error(`HTTP ${response.status()}`);
@@ -157,13 +167,22 @@ async function capture({url,mode}){
    for(const top of [750,1500,0]){await page.evaluate(y=>window.scrollTo({top:y,behavior:'instant'}),top);await page.waitForTimeout(1000);}
    await page.locator('video').evaluateAll(videos=>videos.forEach(video=>video.pause()));
   }
+  if(review){
+   const fullHeight=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
+   if(fullHeight>32000)throw new Error('Home exceeds full-capture height limit');
+   for(let y=0;y<fullHeight;y+=800){await page.evaluate(top=>window.scrollTo({top,behavior:'instant'}),y);await page.waitForTimeout(180);}
+   await cleanPage();
+   await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await page.waitForTimeout(700);
+   await page.evaluate(async()=>{await Promise.race([Promise.all([...document.images].map(img=>img.decode().catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,8000))]);});
+  }
   const height=await page.evaluate(()=>Math.max(document.body.scrollHeight,document.documentElement.scrollHeight));
   // Capture the rendered surface directly without resizing the layout viewport.
   const session=await context.newCDPSession(page);
-  const captureHeight=Math.min(height,Math.round(width*1.5));
+  if(review&&height>32000)throw new Error('Home exceeds full-capture height limit');
+  const captureHeight=review?height:Math.min(height,Math.round(width*1.5));
   await page.locator('video').evaluateAll(videos=>videos.forEach(video=>video.pause()));
   let bytes;
-  if(!mobile&&!['watchhouse.com','cdp.world','skallstudio.com','koppen.co'].includes(new URL(url).hostname.replace(/^www\./,''))){
+  if(!review&&!mobile&&!['watchhouse.com','cdp.world','skallstudio.com','koppen.co'].includes(new URL(url).hostname.replace(/^www\./,''))){
    // Photograph each region while it is actually in view. Offscreen surface clips
    // leave blank areas on sites whose images/animations render only during scrolling.
    const tiles=[];
@@ -196,19 +215,21 @@ async function capture({url,mode}){
    const shot=await Promise.race([
     session.send('Page.captureScreenshot',{format:'jpeg',quality:95,fromSurface:true,captureBeyondViewport:true,clip:{x:0,y:0,width,height:captureHeight,scale:mobile?2:1}}),
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Screenshot timed out')),45000))
-   ]).catch(async()=>({data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')}));
+   ]).catch(async error=>{if(review)throw error;return {data:(await page.screenshot({type:'jpeg',quality:95,fullPage:false,animations:'disabled',timeout:15000})).toString('base64')};});
    bytes=Buffer.from(shot.data,'base64');
   }
   await session.detach();
   await sharp(bytes).resize({width:mobile?780:1200,withoutEnlargement:true}).jpeg({quality:92,chromaSubsampling:'4:4:4'}).toFile(`${output}/${imagePath}`);
-  (manifest[url]||={})[mode]=imagePath;
+  record(imagePath);
   console.log(`Captured ${mode} ${url}`);
  }catch(error){console.warn(`Unavailable ${mode} ${url}: ${error.message}`);}
  finally{await browser.close().catch(()=>{});}
 }
 const pending=[...jobs].sort((a,b)=>Number(b.url==='https://fume-studio.com/collections/all')-Number(a.url==='https://fume-studio.com/collections/all'));
 await Promise.all(Array.from({length:2},async()=>{while(pending.length)await capture(pending.shift());}));
+await fs.writeFile(`${output}/ecommerce-captures.js`,`window.ecommerceCaptures = ${JSON.stringify(reviewManifest)};\n`);
+console.log(`Review homes: ${Object.keys(reviewManifest).length}/${reviewItems.length}`);
 await fs.writeFile(`${output}/captures.js`,`window.galleryCaptures = ${JSON.stringify(manifest)};\n`);
 const successful=Object.values(manifest).reduce((n,modes)=>n+Object.keys(modes).length,0);
-console.log(`Gallery built: ${successful}/${jobs.length} captures. Unavailable previews have an explicit fallback.`);
+console.log(`Gallery built: ${successful}/${jobs.length-reviewItems.length} captures. Unavailable previews have an explicit fallback.`);
 if(!Object.values(manifest).some(record=>record.mobile))throw new Error('No mobile captures were generated; retaining previous deployment.');

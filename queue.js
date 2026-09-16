@@ -1,6 +1,6 @@
 // Shared inbox. Processing into the gallery is a separate editorial action.
 (() => {
-  const sections = ['websites','queue'];
+  const sections = ['websites','ecommerce-review','queue'];
   function showSection() {
     if(['#stores','#templates'].includes(location.hash))history.replaceState(null,'','#websites');
     if(location.hash==='#development')history.replaceState(null,'','#websites');
