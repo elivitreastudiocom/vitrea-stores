@@ -31,7 +31,7 @@ async function capture({url,mode}){
  const refreshDesktop=mode==='desktop' && ['tayanecklace.com','skallstudio.com','quadrodesign.it','lore.world','lesseofficial.com','ssklabs.com','itsgoodbacteria.com','watchhouse.com','susannekaufmann.com','cdp.world','lilluvdog.com','samuelsnider.com','mackintosh.com','galeriegreennyc.com','apinistudio.com','balmoralrunning.com'].includes(new URL(url).hostname.replace(/^www\./,''));
  const refreshPopup=['lorrainesorlet.com','area51store.co.nz','koppen.co','chantelle.com'].includes(new URL(url).hostname.replace(/^www\./,''));
  const refreshAudit=['koppen.co','chantelle.com','ceciliebahnsen.com'].includes(new URL(url).hostname.replace(/^www\./,''));
- const captureVersion=refreshAudit?'clean-ready-v17':mode==='desktop'&&new URL(url).hostname==='skallstudio.com'?'skall-surface-v16':new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
+ const captureVersion=new URL(url).hostname.replace(/^www\./,'')==='koppen.co'?'koppen-newsletter-v18':refreshAudit?'clean-ready-v17':mode==='desktop'&&new URL(url).hostname==='skallstudio.com'?'skall-surface-v16':new URL(url).hostname==='area51store.co.nz'?'marsello-host-v15':mode==='desktop'&&['https://tayanecklace.com/','https://skallstudio.com/'].includes(url)?'scroll-header-v14':refreshDesktop||refreshPopup?'scroll-tiles-v13':mode==='desktop'&&new URL(url).hostname==='tayanecklace.com'?'taya-reveal-v12':mode==='mobile'?'gallery-mobile2x-v12':'gallery-hq-v11';
  const digest=crypto.createHash('sha256').update(`${url}:${mode}:${captureVersion}`).digest('hex').slice(0,20);
  const imagePath=`captures/${digest}.jpg`;
  const previous=old[url]?.[mode];
@@ -73,7 +73,7 @@ async function capture({url,mode}){
     if(await close.isVisible())await close.click().catch(()=>{});
    }
    // The consent/newsletter backdrop remains active after the provider is hidden.
-   await page.addStyleTag({content:'button[aria-label="Close modal"][class*="backdrop-blur"]{display:none!important}'});
+   await page.addStyleTag({content:'button[aria-label="Close modal"][class*="backdrop-blur"],div[x-show="canShow"]:has(button[aria-label="Dismiss newsletter"]){display:none!important}'});
   }
   const title=await page.title();
   if(/access denied|just a moment|checking your browser|robot check|attention required|page not found/i.test(title))throw new Error('Capture blocked');
@@ -162,7 +162,7 @@ async function capture({url,mode}){
   const captureHeight=Math.min(height,Math.round(width*1.5));
   await page.locator('video').evaluateAll(videos=>videos.forEach(video=>video.pause()));
   let bytes;
-  if(!mobile&&!['watchhouse.com','cdp.world','skallstudio.com'].includes(new URL(url).hostname.replace(/^www\./,''))){
+  if(!mobile&&!['watchhouse.com','cdp.world','skallstudio.com','koppen.co'].includes(new URL(url).hostname.replace(/^www\./,''))){
    // Photograph each region while it is actually in view. Offscreen surface clips
    // leave blank areas on sites whose images/animations render only during scrolling.
    const tiles=[];
